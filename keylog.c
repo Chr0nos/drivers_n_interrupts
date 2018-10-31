@@ -49,6 +49,17 @@ static struct smart_buffer key_log;
 static struct key_map key_table[] = {
 	(struct key_map){0x0, 0, "NUL", false, 0},
 	(struct key_map){0x1, 1, "Escape", false, 0},
+	(struct key_map){'1', 2, "1", false, 0},
+	(struct key_map){'2', 3, "2", false, 0},
+	(struct key_map){'3', 4, "3", false, 0},
+	(struct key_map){'4', 5, "4", false, 0},
+	(struct key_map){'5', 6, "5", false, 0},
+	(struct key_map){'6', 7, "6", false, 0},
+	(struct key_map){'7', 8, "7", false, 0},
+	(struct key_map){'8', 9, "8", false, 0},
+	(struct key_map){'9', 10, "9", false, 0},
+	(struct key_map){'-', 11, "-", false, 0},
+	(struct key_map){'=', 12, "=", false, 0},
 	(struct key_map){'\t', 15, "TAB", false, 0},
 	(struct key_map){0x7f, 14, "DEL", false, 0},
 	(struct key_map){'q', 16, "q", false, 0},
@@ -92,6 +103,10 @@ static struct key_map key_table[] = {
 	(struct key_map){' ', 56, "Alt-Right", false, 0},
 	(struct key_map){' ', 57, "Space", false, 0},
 	(struct key_map){0x0, 58, "Caps-Lock", false, 0},
+	(struct key_map){0x0, 75, "Arrow-Left", false, 0},
+	(struct key_map){0x0, 77, "Arrow-Right", false, 0},
+	(struct key_map){0x0, 72, "Arrow-Up", false, 0},
+	(struct key_map){0x0, 80, "Arrow-Down", false, 0},
 	(struct key_map){0x0, 92, "Command-Right", false, 0},
 	(struct key_map){0x0, 0, NULL, false, 0}
 };
