@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -92,13 +93,13 @@ static struct key_map *get_key(const unsigned int scancode)
 }
 
 static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
-	loff_t *offset)
+			 loff_t *offset)
 {
 	return 0;
 }
 
-static ssize_t	write_key(struct file *file, const char __user *buf, size_t size,
-	loff_t *offset)
+static ssize_t	write_key(struct file *file, const char __user *buf,
+			  size_t size, loff_t *offset)
 {
 	return 0;
 }
@@ -113,7 +114,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	unsigned int			scancode;
 	struct key_map			*key;
 
-	scancode = inb (0x60);
+	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
 	if (key)
 		key->pressed = (scancode & 0x80) == 0;
