@@ -192,14 +192,15 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	// seeking to the end of the list
 	while (lst->next)
 		lst = lst->next;
-	while (lst)
-	{
+	// displaying in the reverse order beacause the page are reversed.
+	while (lst) {
 		for (i = 0; i < lst->used; i++) {
 			log = &lst->entries[i];
 			seq_printf(seq,
-				   "%2d::%2d::%2d -> Key: %-12s - count: %lu\n",
+				   "%02d::%02d::%02d -> Key: %-12s - %8s - count: %lu\n",
 				   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
 				   log->key->name,
+				   (log->event == PRESS) ? "pressed" : "released",
 				   log->key->press_count);
 		}
 		lst = lst->prev;
