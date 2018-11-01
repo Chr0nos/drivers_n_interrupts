@@ -181,6 +181,18 @@ static struct key_map *get_key(const unsigned int scancode)
 	return NULL;
 }
 
+static void	key_prepare_show_entry(struct seq_file *seq,
+				       struct key_log_entry *log)
+{
+	seq_printf(seq,
+		   "%02d::%02d::%02d -> Key: %-12s - %8s - count: %4lu (caps: %3s)\n",
+		   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
+		   log->key->name,
+		   (log->event == PRESS) ? "pressed" : "released",
+		   log->key->press_count,
+		   (log->upper_case == true) ? "yes" : "no");
+}
+
 static int	key_prepare_show(struct seq_file *seq, void *ptr)
 {
 	struct key_log_index	*lst;
@@ -197,16 +209,8 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 		lst = lst->next;
 	// displaying in the reverse order beacause the page are reversed.
 	while (lst) {
-		for (i = 0; i < lst->used; i++) {
-			log = &lst->entries[i];
-			seq_printf(seq,
-				   "%02d::%02d::%02d -> Key: %-12s - %8s - count: %lu (caps: %s)\n",
-				   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
-				   log->key->name,
-				   (log->event == PRESS) ? "pressed" : "released",
-				   log->key->press_count,
-				   (log->upper_case == true) ? "yes" : "no");
-		}
+		for (i = 0; i < lst->used; i++)
+			key_prepare_show_entry(&lst->entries[i]);
 		lst = lst->prev;
 	}
 	return 0;
