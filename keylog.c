@@ -9,6 +9,7 @@
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
 #include <linux/time.h>
+#include <linux/seq_file.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
@@ -56,7 +57,7 @@ struct key_log_index {
 
 static struct key_log_index	*key_full_log;
 
-static struct key_log_index *key_log_create_page(struct key_log_index *next)
+static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 {
 	void		*ptr;
 	size_t		blocks;
@@ -179,6 +180,17 @@ static struct key_map *get_key(const unsigned int scancode)
 	return NULL;
 }
 
+static int	key_show(struct seq_file *seq, void *ptr)
+{
+	return 0;
+}
+
+static int	open_key(struct inode *node, struct file *file)
+{
+	pr_info("device open.\n");
+	return single_open(file, &key_show, NULL);
+}
+
 static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 			 loff_t *offset)
 {
@@ -193,9 +205,17 @@ static ssize_t	write_key(struct file *file, const char __user *buf,
 	return 0;
 }
 
+static int	release_key(struct inode *node, struct file *file)
+{
+	pr_info("device closed\n");
+	return single_release(node, file);
+}
+
 static const struct file_operations ops = {
+	.open = open_key,
 	.read = read_key,
-	.write = write_key
+	.write = write_key,
+	.release = release_key
 };
 
 static struct key_log_entry *key_create_entry(struct key_map *key)
