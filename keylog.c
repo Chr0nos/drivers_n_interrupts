@@ -187,7 +187,7 @@ static int		__init hello_init(void)
 {
 	int		ret;
 
-	pr_info(MODULE_NAME "init !\n");
+	pr_info(MODULE_NAME "init ! %u\n", sizeof(key_log_entry));
 	caps_lock = false;
 	key_caps = get_key(14);
 	key_shift_left = get_key(42);
