@@ -220,7 +220,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->timestamp);
 	key_full_log->used += 1;
 	key_full_log->available -= 1;
-	return (log);
+	return log;
 }
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
