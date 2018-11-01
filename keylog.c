@@ -45,6 +45,35 @@ struct key_log_entry {
 	enum e_key_event	event;
 };
 
+struct key_log_index {
+	void			*prev;
+	void			*next;
+	size_t			available;
+	size_t			used;
+	struct key_log_entry	*entries;
+};
+
+static struct key_log_index *key_log_create_page(void *parent)
+{
+	void		*ptr;
+	size_t		blocks;
+
+	ptr = kmalloc(PAGE_SIZE, GFP_KERNEL);
+	if (!ptr)
+		return NULL;
+	blocks = (PAGE_SIZE - (sizeof(struct key_log_index))) /
+		 sizeof(struct key_log_entry);
+	pr_info("created a new page of %lu logs enties", blocks);
+	memset(ptr, 0, PAGE_SIZE);
+	*((struct key_log_index *)ptr) = (struct key_log_index) {
+		.prev = parent,
+		.next = NULL,
+		.available = blocks,
+		.used = 0,
+		.entries = (void *)((size_t)ptr + sizeof(struct key_log_index))
+	};
+}
+
 static struct key_map key_table[] = {
 	(struct key_map){0x0, 0, "NUL", false, 0},
 	(struct key_map){0x1, 1, "Escape", false, 0},
@@ -187,7 +216,7 @@ static int		__init hello_init(void)
 {
 	int		ret;
 
-	pr_info(MODULE_NAME "init ! %u\n", sizeof(key_log_entry));
+	pr_info(MODULE_NAME "init ! %lu\n", sizeof(struct key_log_entry));
 	caps_lock = false;
 	key_caps = get_key(14);
 	key_shift_left = get_key(42);
