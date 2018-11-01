@@ -205,7 +205,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	struct key_log_index	*page;
 
 	// here we need a new page
-	if (key_full_log->available == 0) {
+	if (!key_full_log || key_full_log->available == 0) {
 		page = key_log_create_page(key_full_log);
 		if (!page) {
 			pr_err("failed to create a new page !\n");
