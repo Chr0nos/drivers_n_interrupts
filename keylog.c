@@ -43,7 +43,7 @@ enum e_key_event {
 
 struct key_log_entry {
 	struct key_map		*key;
-	struct tm		timestamp;
+	struct tm		tm;
 	enum e_key_event	event;
 };
 
@@ -180,29 +180,51 @@ static struct key_map *get_key(const unsigned int scancode)
 	return NULL;
 }
 
-static int	key_show(struct seq_file *seq, void *ptr)
+static int	key_prepare_show(struct seq_file *seq, void *ptr)
 {
+	struct key_log_index	*lst;
+	struct key_log_entry	*log;
+	size_t			i;
+
+	lst = key_full_log;
+	if (!lst)
+		return 0;
+	// seeking to the end of the list
+	while (lst->next)
+		lst = lst->next;
+	while (lst)
+	{
+		for (i = 0; i < lst->used; i++) {
+			log = &lst->entries[i];
+			seq_printf(seq,
+				   "%2d::%2d::%2d -> Key: %-12s - count: %lu\n",
+				   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
+				   log->key->name,
+				   log->key->press_count);
+		}
+		lst = lst->prev;
+	}
 	return 0;
 }
 
 static int	open_key(struct inode *node, struct file *file)
 {
 	pr_info("device open.\n");
-	return single_open(file, &key_show, NULL);
+	return single_open(file, &key_prepare_show, NULL);
 }
 
 static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 			 loff_t *offset)
 {
 	pr_info("reading device\n");
-	return 0;
+	return seq_read(file, buf, size, offset);
 }
 
 static ssize_t	write_key(struct file *file, const char __user *buf,
 			  size_t size, loff_t *offset)
 {
 	pr_info("writing on device\n");
-	return 0;
+	return -ENOSPC;
 }
 
 static int	release_key(struct inode *node, struct file *file)
@@ -237,7 +259,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	log = &key_full_log->entries[key_full_log->used];
 	log->key = key;
 	log->event = (key->pressed) ? PRESS : RELEASE;
-	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->timestamp);
+	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->tm);
 	key_full_log->used += 1;
 	key_full_log->available -= 1;
 	return log;
