@@ -45,6 +45,7 @@ struct key_log_entry {
 	struct key_map		*key;
 	struct tm		tm;
 	enum e_key_event	event;
+	bool			upper_case;
 };
 
 struct key_log_index {
@@ -187,8 +188,10 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	size_t			i;
 
 	lst = key_full_log;
-	if (!lst)
+	if (!lst) {
+		seq_puts(seq, "Empty log");
 		return 0;
+	}
 	// seeking to the end of the list
 	while (lst->next)
 		lst = lst->next;
@@ -197,11 +200,12 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 		for (i = 0; i < lst->used; i++) {
 			log = &lst->entries[i];
 			seq_printf(seq,
-				   "%02d::%02d::%02d -> Key: %-12s - %8s - count: %lu\n",
+				   "%02d::%02d::%02d -> Key: %-12s - %8s - count: %lu (caps: %s)\n",
 				   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
 				   log->key->name,
 				   (log->event == PRESS) ? "pressed" : "released",
-				   log->key->press_count);
+				   log->key->press_count,
+				   (log->upper_case == true) ? "yes" : "no");
 		}
 		lst = lst->prev;
 	}
@@ -260,6 +264,10 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	log = &key_full_log->entries[key_full_log->used];
 	log->key = key;
 	log->event = (key->pressed) ? PRESS : RELEASE;
+	log->upper_case = key_shift_left->pressed | key_shift_right->pressed;
+	// in case of caps lock we invert the comportement.
+	if (caps_lock)
+		log->upper_case = log->upper_case == false;
 	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->tm);
 	key_full_log->used += 1;
 	key_full_log->available -= 1;
@@ -276,6 +284,8 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
 			key->press_count += 1;
+		if (scancode == 58)
+			caps_lock = caps_lock == false;
 		key_create_entry(key);
 		pr_info("(scan: %3u) -> %s : %10s [%4lu]\n", scancode,
 			(key ? key->name : "/"),
