@@ -196,7 +196,6 @@ static void	key_prepare_show_entry(struct seq_file *seq,
 static int	key_prepare_show(struct seq_file *seq, void *ptr)
 {
 	struct key_log_index	*lst;
-	struct key_log_entry	*log;
 	size_t			i;
 
 	lst = key_full_log;
@@ -210,7 +209,7 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	// displaying in the reverse order beacause the page are reversed.
 	while (lst) {
 		for (i = 0; i < lst->used; i++)
-			key_prepare_show_entry(&lst->entries[i]);
+			key_prepare_show_entry(seq, &lst->entries[i]);
 		lst = lst->prev;
 	}
 	return 0;
