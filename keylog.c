@@ -327,6 +327,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	unsigned int		scancode;
 	struct key_map		*key;
+	struct task_struct	*task;
 
 	// spin_lock_irq(&lock);
 	scancode = inb(0x60);
@@ -337,7 +338,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			key->press_count += 1;
 		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
-		kthread_create(&key_handler_thread, key, "key_handler");
+		task = kthread_run(&key_handler_thread, key, "key_thread");
 
 	} else if (scancode != 224) {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
