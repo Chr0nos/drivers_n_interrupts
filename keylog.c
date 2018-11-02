@@ -124,7 +124,7 @@ static struct key_map key_table[] = {
 	(struct key_map){'0', ')', 11, "0", ")", false, 0},
 	(struct key_map){'-', '_', 12, "-", "_", false, 0},
 	(struct key_map){'=', '+', 13, "=", "+", false, 0},
-	(struct key_map){'\b', '\b', 14, "DEL", "DEL", false, 0},
+	(struct key_map){0x0, 0x0, 14, "DEL", "DEL", false, 0},
 	(struct key_map){'\t', '\t', 15, "TAB", "TAB", false, 0},
 	(struct key_map){'q', 'Q', 16, "q", "Q", false, 0},
 	(struct key_map){'w', 'W', 17, "w", "W", false, 0},
