@@ -318,7 +318,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	unsigned int		scancode;
 	struct key_map		*key;
 
-	spin_lock_irq(&lock);
+	// spin_lock_irq(&lock);
 	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
 	if (key) {
@@ -333,7 +333,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
-	spin_unlock_irq(&lock);
+	// spin_unlock_irq(&lock);
 	return IRQ_HANDLED;
 }
 
