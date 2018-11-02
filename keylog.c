@@ -181,7 +181,8 @@ static struct key_map key_table[] = {
 #define SCANCODE_ENTER 28
 #define SCANCODE_SPACE 57
 
-static bool		key_ignore_caps(const struct key_map *key) {
+static bool		key_ignore_caps(const struct key_map *key)
+{
 	if (key->scancode >= 2 && key->scancode <= 13)
 		return true;
 	return false;
@@ -219,9 +220,9 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 
 	mutex_lock(&key_log_lock);
 	lst = key_full_log;
-	if (!lst)
+	if (!lst) {
 		seq_puts(seq, "Empty log");
-	else {
+	} else {
 		// seeking to the end of the list
 		while (lst->next)
 			lst = lst->next;
@@ -292,7 +293,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	log->upper_case = key_shift_left->pressed | key_shift_right->pressed;
 	// in case of caps lock we invert the comportement.
 	if (caps_lock && key_ignore_caps(key) == false)
-		log->upper_case = log->upper_case == false;
+		log->upper_case = !log->upper_case;
 	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->tm);
 	key_full_log->used += 1;
 	key_full_log->available -= 1;
@@ -311,13 +312,13 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		if (key->pressed)
 			key->press_count += 1;
 		if (scancode == 58)
-			caps_lock = caps_lock == false;
+			caps_lock = !caps_lock;
 		key_create_entry(key);
 		mutex_unlock(&key_log_lock);
 
 	} else {
 		pr_info("(scan: %3u) -> %s\n", scancode,
-		       ((scancode & 0x80) == 0 ? "pressed" : "released"));
+		        ((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
 	return IRQ_HANDLED;
 }
@@ -343,7 +344,7 @@ static void		key_log_print_unified(void)
 		for (i = 0; i < lst->used; i++) {
 			log = &lst->entries[i];
 			if (log->event != PRESS)
-				continue ;
+				continue;
 			ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 			if (ascii != 0x0)
 				pr_info(KERN_CONT "%c", ascii);
