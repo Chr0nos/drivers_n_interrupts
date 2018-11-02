@@ -175,7 +175,6 @@ static struct key_map key_table[] = {
 	(struct key_map){'.', '.', 83, ".", ".", false, 0},
 	(struct key_map){0x0, 0x0, 92, "Command-Right", "Command-Right", false, 0},
 	(struct key_map){0x0, 0x0, 93, "Menu", "Menu", false, 0},
-	(struct key_map){'\n', '\n', 224, "KeyPad Enter", "KeyPad Enter", false, 0},
 	(struct key_map){0x0, 0x0, 0, NULL, NULL, false, 0}
 };
 
@@ -346,7 +345,7 @@ static void		key_log_print_unified(void)
 			if (log->event != PRESS)
 				continue ;
 			ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
-			if (ascii)
+			if (ascii != 0x0)
 				pr_info(KERN_CONT "%c", ascii);
 		}
 	}
