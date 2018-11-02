@@ -339,7 +339,7 @@ static void		key_log_print_unified(void)
 			log = &lst->entries[i];
 			if (log->event != PRESS)
 				continue ;
-			if (log->key.scancode == SCANCODE_ENTER)
+			if (log->key->scancode == SCANCODE_ENTER)
 				pr_info("\n");
 			else
 				pr_info("%s", (log->upper_case) ? log->key->upper_name : log->key->name);
