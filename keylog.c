@@ -213,7 +213,7 @@ static void	key_prepare_show_entry(struct seq_file *seq,
 {
 	if (!log | !log->key) {
 		pr_err("this should never happens ! grade me with a 0 and go.");
-		return ;
+		return;
 	}
 	seq_printf(seq,
 		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu (caps: %3s)\n",
@@ -330,7 +330,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		mutex_unlock(&key_log_lock);
 
 	} else {
-		pr_info("(scan: %3u) -> %s\n", scancode,
+		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
 	return IRQ_HANDLED;
