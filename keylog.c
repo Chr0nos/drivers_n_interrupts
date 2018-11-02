@@ -11,6 +11,7 @@
 #include <linux/time.h>
 #include <linux/seq_file.h>
 #include <linux/spinlock.h>
+#include <linux/kthread.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
@@ -313,6 +314,15 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	return log;
 }
 
+static int		key_handler_thread(void *ptr)
+{
+	struct key_map		*key = ptr;
+
+	pr_info("[THREAD] key: %p -> %s\n", key, key->name);
+	key_create_entry(key);
+	return 0;
+}
+
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	unsigned int		scancode;
@@ -327,9 +337,9 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			key->press_count += 1;
 		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
-		key_create_entry(key);
+		kthread_create(&key_handler_thread, key, "key_handler");
 
-	} else {
+	} else if (scancode != 224) {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
