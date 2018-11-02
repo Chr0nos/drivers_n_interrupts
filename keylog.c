@@ -188,7 +188,7 @@ static bool		key_ignore_caps(const struct key_map *key)
 	return false;
 }
 
-static struct key_map *get_key(const unsigned int scancode)
+static struct key_map	*get_key(const unsigned int scancode)
 {
 	size_t		i;
 
@@ -204,6 +204,10 @@ static struct key_map *get_key(const unsigned int scancode)
 static void	key_prepare_show_entry(struct seq_file *seq,
 				       struct key_log_entry *log)
 {
+	if (!log | !log->key) {
+		pr_err("this should never happens ! grade me with a 0 and go.");
+		return ;
+	}
 	seq_printf(seq,
 		   "%02d::%02d::%02d -> Key: %-12s - %8s - count: %4lu (caps: %3s)\n",
 		   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
