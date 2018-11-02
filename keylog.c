@@ -59,6 +59,9 @@ struct key_log_index {
 
 static struct key_log_index	*key_full_log;
 
+/* mutex for the full log */
+DEFINE_MUTEX(key_log_lock);
+
 static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 {
 	void		*ptr;
@@ -88,6 +91,7 @@ static void		key_log_clean(void)
 	struct key_log_index	*lst;
 	struct key_log_index	*next;
 
+	mutex_lock(&key_log_lock);
 	lst = key_full_log;
 	while (lst) {
 		next = lst->next;
@@ -95,6 +99,7 @@ static void		key_log_clean(void)
 		kfree(lst);
 		lst = next;
 	}
+	mutex_unlock(&key_log_lock);
 }
 
 static struct key_map key_table[] = {
@@ -199,20 +204,22 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	struct key_log_index	*lst;
 	size_t			i;
 
+	mutex_lock(&key_log_lock);
 	lst = key_full_log;
-	if (!lst) {
+	if (!lst)
 		seq_puts(seq, "Empty log");
-		return 0;
+	else {
+		// seeking to the end of the list
+		while (lst->next)
+			lst = lst->next;
 	}
-	// seeking to the end of the list
-	while (lst->next)
-		lst = lst->next;
 	// displaying in the reverse order beacause the page are reversed.
 	while (lst) {
 		for (i = 0; i < lst->used; i++)
 			key_prepare_show_entry(seq, &lst->entries[i]);
 		lst = lst->prev;
 	}
+	mutex_unlock(&key_log_lock);
 	return 0;
 }
 
@@ -286,6 +293,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 
 	key = get_key(scancode & 0x7f);
 	if (key) {
+		mutex_lock(&key_log_lock);
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
 			key->press_count += 1;
@@ -296,6 +304,8 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			(key ? key->name : "/"),
 			(key->pressed ? "pressed" : "released"),
 			key->press_count);
+		mutex_unlock(&key_log_lock);
+
 	} else {
 		pr_info("(scan: %3u) -> %s\n", scancode,
 		       ((scancode & 0x80) == 0 ? "pressed" : "released"));
