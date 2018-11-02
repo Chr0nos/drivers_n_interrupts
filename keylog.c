@@ -347,6 +347,9 @@ static void		key_log_print_unified(void)
 			ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 			if (ascii != 0x0)
 				pr_info(KERN_CONT "%c", ascii);
+			else
+				pr_info(KERN_COUNT "[%s]",
+				       (log->upper_case ? log->key->upper_name : log->key->name));
 		}
 	}
 }
