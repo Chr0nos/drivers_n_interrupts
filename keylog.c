@@ -124,7 +124,7 @@ static struct key_map key_table[] = {
 	(struct key_map){'0', ')', 11, "0", ")", false, 0},
 	(struct key_map){'-', '_', 12, "-", "_", false, 0},
 	(struct key_map){'=', '+', 13, "=", "+", false, 0},
-	(struct key_map){0x7f, 0x7f, 14, "DEL", "DEL", false, 0},
+	(struct key_map){'\b', '\b', 14, "DEL", "DEL", false, 0},
 	(struct key_map){'\t', '\t', 15, "TAB", "TAB", false, 0},
 	(struct key_map){'q', 'Q', 16, "q", "Q", false, 0},
 	(struct key_map){'w', 'W', 17, "w", "W", false, 0},
@@ -233,7 +233,7 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 		seq_puts(seq, "Empty log");
 		return 0;
 	}
-	pr_info("show start");
+	pr_info("show start %p", ptr);
 	// displaying in the reverse order beacause the page are reversed.
 	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
 		for (i = 0; i < lst->used; i++)
