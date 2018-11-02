@@ -331,6 +331,7 @@ static void		key_log_print_unified(void)
 	struct key_log_index	*lst;
 	struct key_log_entry	*log;
 
+	lst = key_full_log;
 	// seek to the end
 	while (lst->next)
 		lst = lst->next;
