@@ -216,9 +216,10 @@ static void	key_prepare_show_entry(struct seq_file *seq,
 		return ;
 	}
 	seq_printf(seq,
-		   "%02d::%02d::%02d -> Key: %-12s - %8s - count: %4lu (caps: %3s)\n",
+		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu (caps: %3s)\n",
 		   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
 		   (log->upper_case) ? log->key->upper_name : log->key->name,
+		   log->key->scancode,
 		   (log->event == PRESS) ? "pressed" : "released",
 		   log->key->press_count,
 		   (log->upper_case) ? "yes" : "no");
@@ -347,11 +348,7 @@ static void		key_log_print_unified(void)
 	struct key_log_entry	*log;
 	char			ascii;
 
-	lst = key_full_log;
-	// seek to the end
-	while (lst->next)
-		lst = lst->next;
-	for (lst = key_full_log; lst; lst = lst->prev) {
+	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
 		for (i = 0; i < lst->used; i++) {
 			log = &lst->entries[i];
 			if (log->event != PRESS)
