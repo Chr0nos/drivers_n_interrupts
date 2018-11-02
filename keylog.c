@@ -340,12 +340,9 @@ static void		key_log_print_unified(void)
 			log = &lst->entries[i];
 			if (log->event != PRESS)
 				continue ;
-			if (log->key->scancode == SCANCODE_ENTER)
-				pr_info(KERN_CONT "\n");
-			else {
-				ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
+			ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
+			if (ascii)
 				pr_info(KERN_CONT "%c", ascii);
-			}
 		}
 	}
 }
