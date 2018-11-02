@@ -86,6 +86,15 @@ static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 	return ptr;
 }
 
+static struct key_log_index	*key_log_last(struct key_log_index *lst)
+{
+	if (!lst)
+		return NULL;
+	while (lst->next)
+		lst = lst->next;
+	return lst;
+}
+
 static void		key_log_clean(void)
 {
 	struct key_log_index	*lst;
@@ -192,11 +201,9 @@ static struct key_map	*get_key(const unsigned int scancode)
 {
 	size_t		i;
 
-	i = 0;
-	while (key_table[i].name) {
+	for (i = 0; key_table[i].name; i++) {
 		if (key_table[i].scancode == scancode)
 			return &key_table[i];
-		i++;
 	}
 	return NULL;
 }
@@ -222,29 +229,27 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	struct key_log_index	*lst;
 	size_t			i;
 
-	mutex_lock(&key_log_lock);
-	lst = key_full_log;
-	if (!lst) {
+	if (!key_full_log) {
 		seq_puts(seq, "Empty log");
-	} else {
-		// seeking to the end of the list
-		while (lst->next)
-			lst = lst->next;
+		return ;
 	}
 	// displaying in the reverse order beacause the page are reversed.
-	while (lst) {
+	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
 		for (i = 0; i < lst->used; i++)
 			key_prepare_show_entry(seq, &lst->entries[i]);
-		lst = lst->prev;
 	}
-	mutex_unlock(&key_log_lock);
 	return 0;
 }
 
 static int	open_key(struct inode *node, struct file *file)
 {
+	int	ret;
+
 	pr_info("device open.\n");
-	return single_open(file, &key_prepare_show, NULL);
+	mutex_lock(&key_log_lock);
+	ret = single_open(file, &key_prepare_show, NULL);
+	mutex_unlock(&key_log_lock);
+	return ret;
 }
 
 static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
