@@ -363,6 +363,7 @@ static void		key_log_print_unified(void)
 				pr_info(KERN_CONT "[%s]",
 				       (log->upper_case ? log->key->upper_name : log->key->name));
 		}
+		pr_info("");
 	}
 }
 
