@@ -173,6 +173,7 @@ static struct key_map key_table[] = {
 };
 
 #define SCANCODE_ENTER 28
+#define SCANCODE_SPACE 57
 
 static bool		key_ignore_caps(const struct key_map *key) {
 	if (key->scancode >= 2 && key->scancode <= 13)
@@ -306,10 +307,6 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		if (scancode == 58)
 			caps_lock = caps_lock == false;
 		key_create_entry(key);
-		pr_info("(scan: %3u) -> %s : %10s [%4lu]\n", scancode,
-			(key ? key->name : "/"),
-			(key->pressed ? "pressed" : "released"),
-			key->press_count);
 		mutex_unlock(&key_log_lock);
 
 	} else {
@@ -330,6 +327,7 @@ static void		key_log_print_unified(void)
 	ssize_t			i;
 	struct key_log_index	*lst;
 	struct key_log_entry	*log;
+	const char		*name;
 
 	lst = key_full_log;
 	// seek to the end
@@ -341,9 +339,14 @@ static void		key_log_print_unified(void)
 			if (log->event != PRESS)
 				continue ;
 			if (log->key->scancode == SCANCODE_ENTER)
-				pr_info("\n");
-			else
-				pr_info("%s", (log->upper_case) ? log->key->upper_name : log->key->name);
+				pr_info(KERN_CONT "\n");
+			else {
+				name = (log->upper_case) ? log->key->upper_name : log->key->name;
+				if (log->key->scancode == SCANCODE_SPACE)
+					name = " ";
+				pr_info(KERN_CONT "%s", name);
+
+			}
 		}
 	}
 }
