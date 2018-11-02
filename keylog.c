@@ -174,6 +174,12 @@ static struct key_map key_table[] = {
 	(struct key_map){0x0, 0, NULL, NULL, false, 0}
 };
 
+static bool		key_ignore_caps(const struct key_map *key) {
+	if (key->scancode >= 2 && key->scancode <= 13)
+		return true;
+	return false;
+}
+
 static struct key_map *get_key(const unsigned int scancode)
 {
 	size_t		i;
@@ -278,7 +284,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	log->event = (key->pressed) ? PRESS : RELEASE;
 	log->upper_case = key_shift_left->pressed | key_shift_right->pressed;
 	// in case of caps lock we invert the comportement.
-	if (caps_lock)
+	if (caps_lock && key_ignore_caps(key) == false)
 		log->upper_case = log->upper_case == false;
 	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->tm);
 	key_full_log->used += 1;
