@@ -250,6 +250,7 @@ static int	open_key(struct inode *node, struct file *file)
 
 	pr_info("device open.\n");
 	mutex_lock(&key_log_lock);
+	pr_info("single open\n");
 	ret = single_open(file, &key_prepare_show, NULL);
 	mutex_unlock(&key_log_lock);
 	return ret;
