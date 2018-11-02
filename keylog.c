@@ -329,7 +329,7 @@ static void		key_log_print_unified(void)
 	ssize_t			i;
 	struct key_log_index	*lst;
 	struct key_log_entry	*log;
-	const char		ascii;
+	char			ascii;
 
 	lst = key_full_log;
 	// seek to the end
