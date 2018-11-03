@@ -231,7 +231,7 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	size_t			i;
 
 	if (!key_full_log) {
-		seq_puts(seq, "Empty log");
+		seq_puts(seq, "Empty log\n");
 		return 0;
 	}
 	pr_info("show start %p", ptr);
