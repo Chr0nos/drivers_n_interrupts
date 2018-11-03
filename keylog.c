@@ -263,9 +263,9 @@ static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 	int	ret;
 
 	pr_info("reading device\n");
-	spin_lock(&lock);
+	// spin_lock(&lock);
 	ret = seq_read(file, buf, size, offset);
-	spin_unlock(&lock);
+	// spin_unlock(&lock);
 	return ret;
 }
 
@@ -325,22 +325,22 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	struct key_map		*key;
 	size_t			flags;
 
+	spin_lock_irqsave(&lock, flags);
 	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
 	if (key) {
-		spin_lock_irqsave(&lock, flags);
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
 			key->press_count += 1;
 		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
-		key_create_entry(key);
 		spin_unlock_irqrestore(&lock, flags);
 
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
+	key_create_entry(key);
 	return IRQ_HANDLED;
 }
 
