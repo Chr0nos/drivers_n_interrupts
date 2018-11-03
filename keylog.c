@@ -213,7 +213,7 @@ static void	key_prepare_show_entry(struct seq_file *seq,
 				       struct key_log_entry *log)
 {
 	if (!log | !log->key) {
-		pr_err("this should never happens ! grade me with a 0 and go.");
+		pr_err("this should never happen ! grade me with a 0 and go.");
 		return;
 	}
 	seq_printf(seq,
@@ -260,8 +260,13 @@ static int	open_key(struct inode *node, struct file *file)
 static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 			 loff_t *offset)
 {
+	int	ret;
+
 	pr_info("reading device\n");
-	return seq_read(file, buf, size, offset);
+	spin_lock(&lock);
+	ret = seq_read(file, buf, size, offset);
+	spin_unlock(&lock);
+	return ret;
 }
 
 static ssize_t	write_key(struct file *file, const char __user *buf,
