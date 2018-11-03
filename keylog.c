@@ -253,7 +253,8 @@ static int	open_key(struct inode *node, struct file *file)
 	spin_lock(&lock);
 	pr_info("single open\n");
 	ret = single_open(file, &key_prepare_show, NULL);
-	spin_unlock(&lock);
+	// let's try to only unlock at close...
+	// spin_unlock(&lock);
 	return ret;
 }
 
@@ -263,9 +264,7 @@ static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 	int	ret;
 
 	pr_info("reading device\n");
-	// spin_lock(&lock);
 	ret = seq_read(file, buf, size, offset);
-	// spin_unlock(&lock);
 	return ret;
 }
 
@@ -279,6 +278,7 @@ static ssize_t	write_key(struct file *file, const char __user *buf,
 static int	release_key(struct inode *node, struct file *file)
 {
 	pr_info("device closed\n");
+	spin_unlock(&lock);
 	return single_release(node, file);
 }
 
@@ -319,6 +319,16 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	return log;
 }
 
+/*
+ISSUE #1:
+- key_handler create an entry into "key_full_log" BUT at the same time
+  the user can open the device and read causing simple_open to make a data race
+
+- Solutions tested:
+	- Mutex -> impossible into an irq handler
+	- SpinLock -> dosent works, dont know why
+*/
+
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	unsigned int		scancode;
@@ -335,7 +345,6 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
 		key_create_entry(key);
-
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
