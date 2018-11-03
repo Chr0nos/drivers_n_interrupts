@@ -250,7 +250,7 @@ static int	open_key(struct inode *node, struct file *file)
 	int	ret;
 
 	pr_info("device open.\n");
-	spin_lock(&lock);
+	spin_lock_irq(&lock);
 	pr_info("single open\n");
 	ret = single_open(file, &key_prepare_show, NULL);
 	// let's try to only unlock at close...
@@ -278,7 +278,7 @@ static ssize_t	write_key(struct file *file, const char __user *buf,
 static int	release_key(struct inode *node, struct file *file)
 {
 	pr_info("device closed\n");
-	spin_unlock(&lock);
+	spin_unlock_irq(&lock);
 	return single_release(node, file);
 }
 
