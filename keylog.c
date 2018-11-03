@@ -335,9 +335,9 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	struct key_map		*key;
 	size_t			flags;
 
-	spin_lock_irqsave(&lock, flags);
 	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
+	spin_lock_irqsave(&lock, flags);
 	if (key) {
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
