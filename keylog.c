@@ -334,13 +334,13 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			key->press_count += 1;
 		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
-		spin_unlock_irqrestore(&lock, flags);
+		key_create_entry(key);
 
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
-	key_create_entry(key);
+	spin_unlock_irqrestore(&lock, flags);
 	return IRQ_HANDLED;
 }
 
