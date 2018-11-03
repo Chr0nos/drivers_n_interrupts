@@ -283,6 +283,7 @@ static int	release_key(struct inode *node, struct file *file)
 }
 
 static const struct file_operations ops = {
+	.owner = THIS_MODULE,
 	.open = open_key,
 	.read = read_key,
 	.write = write_key,
