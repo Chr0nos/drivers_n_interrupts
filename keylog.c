@@ -44,7 +44,7 @@ enum e_key_event {
 // event : was it a press or a release ?
 
 struct key_log_entry {
-	struct key_map		*key;
+	const struct key_map	*key;
 	struct tm		tm;
 	enum e_key_event	event;
 	bool			upper_case;
@@ -107,6 +107,7 @@ static void		key_log_clean(void)
 		kfree(lst);
 		lst = next;
 	}
+	key_full_log = NULL;
 }
 
 static struct key_map key_table[] = {
