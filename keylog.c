@@ -342,7 +342,7 @@ static void		key_job(struct work_struct *work)
 
 	// key = (void*)((size_t)work + sizeof(*work));
 	key = (struct key_map *)((size_t)work - 8);
-	pr_info("logging key in workjob. %p", work);
+	pr_info("logging key in workjob. %p : %p", work, key);
 	mutex_lock(&lock);
 	// key_create_entry(key);
 	mutex_unlock(&lock);
