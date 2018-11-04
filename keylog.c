@@ -319,16 +319,6 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	return log;
 }
 
-/*
- * ISSUE #1:
- * - key_handler create an entry into "key_full_log" BUT at the same time
- *   the user can open the device and read causing simple_open to make a data race
- *
- * - Solutions tested:
- *	- Mutex -> impossible into an irq handler
- *	- SpinLock -> dosent works, dont know why
- */
-
 static struct workqueue_struct	*workqueue;
 
 struct key_task {
@@ -338,8 +328,8 @@ struct key_task {
 
 static void		key_job(struct work_struct *work)
 {
-	struct key_task		*kw = (struct key_task *)work;
-	unsigned int		scancode = kw->scancode;
+	struct key_task		*task = (struct key_task *)work;
+	unsigned int		scancode = task->scancode;
 	struct key_map		*key;
 
 	mutex_lock(&lock);
@@ -356,7 +346,7 @@ static void		key_job(struct work_struct *work)
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
 	mutex_unlock(&lock);
-	kfree(kw);
+	kfree(task);
 }
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
