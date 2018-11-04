@@ -233,11 +233,11 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	struct key_log_index	*lst;
 	size_t			i;
 
+	pr_info("show start");
 	if (!key_full_log) {
 		seq_puts(seq, "Empty log\n");
 		return 0;
 	}
-	pr_info("show start %p", ptr);
 	// displaying in the reverse order beacause the page are reversed.
 	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
 		for (i = 0; i < lst->used; i++)
