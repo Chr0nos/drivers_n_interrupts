@@ -49,6 +49,7 @@ struct key_log_entry {
 	struct tm		tm;
 	enum e_key_event	event;
 	bool			upper_case;
+	size_t			press_count;
 };
 
 struct key_log_index {
@@ -218,12 +219,12 @@ static void	key_prepare_show_entry(struct seq_file *seq,
 		return;
 	}
 	seq_printf(seq,
-		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu (caps: %3s)\n",
+		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu of %4lu (caps: %3s)\n",
 		   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
 		   (log->upper_case) ? log->key->upper_name : log->key->name,
 		   log->key->scancode,
 		   (log->event == PRESS) ? "pressed" : "released",
-		   log->key->press_count,
+		   log->press_count, log->key->press_count,
 		   (log->upper_case) ? "yes" : "no");
 }
 
@@ -308,6 +309,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	getnstimeofday(&ts);
 	log = &key_full_log->entries[key_full_log->used];
 	log->key = key;
+	log->press_count = key->press_count;
 	log->event = (key->pressed) ? PRESS : RELEASE;
 	log->upper_case = key_shift_left->pressed | key_shift_right->pressed;
 	// in case of caps lock we invert the comportement.
