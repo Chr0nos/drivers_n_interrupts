@@ -338,8 +338,6 @@ static void		key_job(struct work_struct *work)
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
 			key->press_count += 1;
-		pr_info("origin key: %p", key);
-		pr_info("key: %s\n", key->name);
 		key_create_entry(key);
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
