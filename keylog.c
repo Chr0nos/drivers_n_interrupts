@@ -335,15 +335,15 @@ struct key_work {
 };
 
 static struct key_work		 workqueue;
-static struct key_map		*last_key;
+static struct key_map		 last_key;
 
 static void		key_job(struct work_struct *work)
 {
-	struct key_map		*key = last_key;
+	struct key_map		*key = &last_key;
 
-	pr_info("logging key in workjob. key: %p", key);
 	mutex_lock(&lock);
-	// key_create_entry(key);
+	pr_info("key: %s\n", key->name);
+	key_create_entry(key);
 	mutex_unlock(&lock);
 
 }
@@ -371,7 +371,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			init_done = true;
 		}
 		pr_info("origin key: %p", key);
-		last_key = key;
+		last_key = *key;
 		queue_work(workqueue.work, &task);
 
 	} else {
