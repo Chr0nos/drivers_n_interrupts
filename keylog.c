@@ -335,11 +335,16 @@ struct key_work {
 };
 
 static struct key_work		 workqueue;
-static unsigned int		 last_scancode;
+
+struct key_task {
+	struct work_struct	task;
+	unsigned int		scancode;
+};
 
 static void		key_job(struct work_struct *work)
 {
-	unsigned int		scancode = last_scancode;
+	struct key_task		*kw = (struct key_task *)work;
+	unsigned int		scancode = kw->scancode;
 	struct key_map		*key;
 
 	mutex_lock(&lock);
@@ -356,27 +361,21 @@ static void		key_job(struct work_struct *work)
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
 	mutex_unlock(&lock);
+	kfree(kw);
 }
-
-DEFINE_SPINLOCK(irq_lock);
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
-	unsigned int			scancode;
-	static struct work_struct	task;
-	static bool			init_done = false;
+	struct key_task			*task;
 
-	spin_lock_irq(&irq_lock);
-	scancode = inb(0x60);
-	if (scancode == SCANCODE_CAPS)
-		caps_lock = !caps_lock;
-	if (!init_done) {
-		INIT_WORK(&task, key_job);
-		init_done = true;
+	task = kmalloc(sizeof(*task), GFP_KERNEL);
+	if (task) {
+		task->scancode = inb(0x60);
+		if (task->scancode == SCANCODE_CAPS)
+			caps_lock = !caps_lock;
+		INIT_WORK(&task->task, key_job);
+		queue_work(workqueue.work, &task->task);
 	}
-	last_scancode = scancode;
-	queue_work(workqueue.work, &task);
-	spin_unlock_irq(&irq_lock);
 	return IRQ_HANDLED;
 }
 
