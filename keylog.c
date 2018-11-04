@@ -335,17 +335,27 @@ struct key_work {
 };
 
 static struct key_work		 workqueue;
-static struct key_map		 last_key;
+static unsigned int		 last_scancode;
 
 static void		key_job(struct work_struct *work)
 {
-	struct key_map		*key = &last_key;
+	unsigned int		scancode = last_scancode;
+	struct key_map		*key;
 
 	mutex_lock(&lock);
-	pr_info("key: %s\n", key->name);
-	key_create_entry(key);
+	key = get_key(scancode & 0x7f);
+	if (key) {
+		key->pressed = (scancode & 0x80) == 0;
+		if (key->pressed)
+			key->press_count += 1;
+		pr_info("origin key: %p", key);
+		pr_info("key: %s\n", key->name);
+		key_create_entry(key);
+	} else {
+		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
+			((scancode & 0x80) == 0 ? "pressed" : "released"));
+	}
 	mutex_unlock(&lock);
-
 }
 
 DEFINE_SPINLOCK(irq_lock);
@@ -354,30 +364,18 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	unsigned int			scancode;
 	static struct work_struct	task;
-	static struct key_map		*key;
 	static bool			init_done = false;
 
 	spin_lock_irq(&irq_lock);
 	scancode = inb(0x60);
-	key = get_key(scancode & 0x7f);
-	if (key) {
-		key->pressed = (scancode & 0x80) == 0;
-		if (key->pressed)
-			key->press_count += 1;
-		if (scancode == SCANCODE_CAPS)
-			caps_lock = !caps_lock;
-		if (!init_done) {
-			INIT_WORK(&task, key_job);
-			init_done = true;
-		}
-		pr_info("origin key: %p", key);
-		last_key = *key;
-		queue_work(workqueue.work, &task);
-
-	} else {
-		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
-			((scancode & 0x80) == 0 ? "pressed" : "released"));
+	if (scancode == SCANCODE_CAPS)
+		caps_lock = !caps_lock;
+	if (!init_done) {
+		INIT_WORK(&task, key_job);
+		init_done = true;
 	}
+	last_scancode = scancode;
+	queue_work(workqueue.work, &task);
 	spin_unlock_irq(&irq_lock);
 	return IRQ_HANDLED;
 }
