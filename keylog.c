@@ -341,8 +341,8 @@ static void		key_job(struct work_struct *work)
 	struct key_map		*key;
 
 	// key = (void*)((size_t)work + sizeof(*work));
-	key = (struct key_map *)((size_t)work - 8);
-	pr_info("logging key in workjob. %p : %p", work, key);
+	key = *(struct key_map **)((size_t)work - 8);
+	pr_info("logging key in workjob. task: %p work: %p", work, key);
 	mutex_lock(&lock);
 	// key_create_entry(key);
 	mutex_unlock(&lock);
@@ -371,7 +371,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			INIT_WORK(&task, key_job);
 			init_done = true;
 		}
-		pr_info("origin key: %p -> %p (%p)", &task, key, &key);
+		pr_info("origin key: task %p -> key: %p (&key: %p)", &task, key, &key);
 		queue_work(workqueue.work, &task);
 
 	} else {
