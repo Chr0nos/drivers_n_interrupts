@@ -11,6 +11,7 @@
 #include <linux/time.h>
 #include <linux/seq_file.h>
 #include <linux/spinlock.h>
+#include <linux/workqueue.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
@@ -332,9 +333,10 @@ ISSUE #1:
 
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
-	unsigned int		scancode;
-	struct key_map		*key;
-	size_t			flags;
+	unsigned int			scancode;
+	struct key_map			*key;
+	size_t				flags;
+	static struct work_struct	task;
 
 	scancode = inb(0x60);
 	key = get_key(scancode & 0x7f);
