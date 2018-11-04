@@ -33,7 +33,6 @@ struct key_map {
 
 static struct key_map		*key_shift_left;
 static struct key_map		*key_shift_right;
-static bool			caps_lock;
 
 enum e_key_event {
 	PRESS,
@@ -355,6 +354,7 @@ static void		key_job(struct work_struct *work)
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	struct key_task			*task;
+	static bool			caps_lock = false;
 
 	task = kmalloc(sizeof(*task), GFP_KERNEL);
 	if (task) {
@@ -423,7 +423,6 @@ static int		__init hello_init(void)
 		return -ENOMEM;
 	}
 	key_full_log = NULL;
-	caps_lock = false;
 	key_shift_left = get_key(42);
 	key_shift_right = get_key(54);
 	ret = request_irq(KEYBOARD_IRQ, &key_handler, IRQF_SHARED, MODULE_NAME,
@@ -438,7 +437,6 @@ static int		__init hello_init(void)
 		free_irq(KEYBOARD_IRQ, &key_handler);
 		return 1;
 	}
-
 	return 0;
 }
 
