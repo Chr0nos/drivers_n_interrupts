@@ -266,16 +266,6 @@ static int	open_key(struct inode *node, struct file *file)
 	return ret;
 }
 
-static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
-			 loff_t *offset)
-{
-	int	ret;
-
-	pr_info("reading device\n");
-	ret = seq_read(file, buf, size, offset);
-	return ret;
-}
-
 static int	release_key(struct inode *node, struct file *file)
 {
 	int		ret;
@@ -290,7 +280,7 @@ static int	release_key(struct inode *node, struct file *file)
 static const struct file_operations ops = {
 	.owner = THIS_MODULE,
 	.open = open_key,
-	.read = read_key,
+	.read = seq_read,
 	.release = release_key,
 	.llseek = seq_lseek,
 };
