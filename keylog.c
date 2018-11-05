@@ -248,11 +248,9 @@ static void	key_prepare_show_entry(struct key_log_entry *log, void *ptr)
 
 static int	key_prepare_show(struct seq_file *seq, void *ptr)
 {
-	pr_info("show start\n");
 	spin_lock(&slock);
 	key_log_iter(key_prepare_show_entry, seq);
 	spin_unlock(&slock);
-	pr_info("show done.\n");
 	return 0;
 }
 
@@ -369,20 +367,6 @@ static struct miscdevice		dev = {
 	MODULE_NAME,
 	&ops
 };
-
-static void	key_logprint(struct key_log_entry *log, void *ptr)
-{
-	char		ascii;
-
-	if (log->event != PRESS)
-		return;
-	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
-	if (ascii != 0x0)
-		pr_info(KERN_CONT "%c", ascii);
-	else
-		pr_info(KERN_CONT "[%s]",
-		    (log->upper_case ? log->key->upper_name : log->key->name));
-}
 
 static void	key_logprint_smart(struct key_log_entry *log, void *ptr)
 {
