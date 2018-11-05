@@ -276,13 +276,6 @@ static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 	return ret;
 }
 
-static ssize_t	write_key(struct file *file, const char __user *buf,
-			  size_t size, loff_t *offset)
-{
-	pr_info("writing on device\n");
-	return -ENOSPC;
-}
-
 static int	release_key(struct inode *node, struct file *file)
 {
 	int		ret;
@@ -298,7 +291,6 @@ static const struct file_operations ops = {
 	.owner = THIS_MODULE,
 	.open = open_key,
 	.read = read_key,
-	.write = write_key,
 	.release = release_key,
 	.llseek = seq_lseek,
 };
