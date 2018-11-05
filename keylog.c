@@ -363,7 +363,7 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	struct key_task			*task;
 	static bool			caps_lock;
 
-	task = kmalloc(sizeof(*task), GFP_KERNEL | GFP_ATOMIC);
+	task = kmalloc(sizeof(*task), GFP_ATOMIC);
 	if (task) {
 		task->scancode = inb(0x60);
 		if (task->scancode == SCANCODE_CAPS)
