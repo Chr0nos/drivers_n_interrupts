@@ -211,9 +211,10 @@ static struct key_map	*get_key(const unsigned int scancode)
 	return NULL;
 }
 
-static void	key_prepare_show_entry(struct seq_file *seq,
-				       struct key_log_entry *log)
+static void	key_prepare_show_entry(struct key_log_entry *log, void *ptr)
 {
+	struct seq_file *seq = ptr;
+
 	if (!log | !log->key) {
 		pr_err("this should never happen ! grade me with a 0 and go.");
 		return;
@@ -228,23 +229,25 @@ static void	key_prepare_show_entry(struct seq_file *seq,
 		   (log->upper_case) ? "yes" : "no");
 }
 
+static void	key_log_iter(void (*func)(struct key_log_entry *, void *),
+			     void *data)
+{
+	struct key_log_index		*lst;
+	size_t				i;
+
+	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
+		for (i = 0; i < lst->used; i++)
+			func(&lst->entries[i], data);
+	}
+}
+
 static int	key_prepare_show(struct seq_file *seq, void *ptr)
 {
-	struct key_log_index	*lst;
-	size_t			i;
-
-	pr_info("show start");
+	pr_info("show start\n");
 	spin_lock(&slock);
-	if (!key_full_log) {
-		seq_puts(seq, "Empty log\n");
-	} else {
-		for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
-			for (i = 0; i < lst->used; i++)
-				key_prepare_show_entry(seq, &lst->entries[i]);
-		}
-		pr_info("show end");
-	}
+	key_log_iter(key_prepare_show_entry, seq);
 	spin_unlock(&slock);
+	pr_info("show done.\n");
 	return 0;
 }
 
@@ -257,15 +260,15 @@ static int	open_key(struct inode *node, struct file *file)
 	return ret;
 }
 
-// static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
-// 			 loff_t *offset)
-// {
-// 	int	ret;
+static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
+			 loff_t *offset)
+{
+	int	ret;
 
-// 	pr_info("reading device\n");
-// 	ret = seq_read(file, buf, size, offset);
-// 	return ret;
-// }
+	pr_info("reading device\n");
+	ret = seq_read(file, buf, size, offset);
+	return ret;
+}
 
 static ssize_t	write_key(struct file *file, const char __user *buf,
 			  size_t size, loff_t *offset)
@@ -283,7 +286,7 @@ static int	release_key(struct inode *node, struct file *file)
 static const struct file_operations ops = {
 	.owner = THIS_MODULE,
 	.open = open_key,
-	.read = seq_read,
+	.read = read_key,
 	.write = write_key,
 	.release = release_key,
 	.llseek = seq_lseek,
