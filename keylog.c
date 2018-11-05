@@ -260,6 +260,7 @@ static int	open_key(struct inode *node, struct file *file)
 	int	ret;
 
 	pr_info("device open.\n");
+	file->private_data = NULL;
 	ret = single_open(file, &key_prepare_show, NULL);
 	return ret;
 }
