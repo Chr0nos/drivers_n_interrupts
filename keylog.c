@@ -234,16 +234,17 @@ static int	key_prepare_show(struct seq_file *seq, void *ptr)
 	size_t			i;
 
 	pr_info("show start");
+	spin_lock(&slock);
 	if (!key_full_log) {
 		seq_puts(seq, "Empty log\n");
-		return 0;
+	} else {
+		for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
+			for (i = 0; i < lst->used; i++)
+				key_prepare_show_entry(seq, &lst->entries[i]);
+		}
+		pr_info("show end");
 	}
-	// displaying in the reverse order beacause the page are reversed.
-	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
-		for (i = 0; i < lst->used; i++)
-			key_prepare_show_entry(seq, &lst->entries[i]);
-	}
-	pr_info("show end");
+	spin_unlock(&slock);
 	return 0;
 }
 
@@ -252,9 +253,7 @@ static int	open_key(struct inode *node, struct file *file)
 	int	ret;
 
 	pr_info("device open.\n");
-	// spin_lock(&slock);
 	ret = single_open(file, &key_prepare_show, NULL);
-	// spin_unlock(&slock);
 	return ret;
 }
 
@@ -264,9 +263,7 @@ static ssize_t	read_key(struct file *file, char __user *buf, size_t size,
 	int	ret;
 
 	pr_info("reading device\n");
-	spin_lock(&slock);
 	ret = seq_read(file, buf, size, offset);
-	spin_unlock(&slock);
 	return ret;
 }
 
