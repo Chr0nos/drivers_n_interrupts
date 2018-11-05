@@ -284,8 +284,13 @@ static ssize_t	write_key(struct file *file, const char __user *buf,
 
 static int	release_key(struct inode *node, struct file *file)
 {
+	int		ret;
+
 	pr_info("device closed\n");
-	return single_release(node, file);
+	spin_lock(&slock);
+	ret = single_release(node, file);
+	spin_unlock(&slock);
+	return ret;
 }
 
 static const struct file_operations ops = {
