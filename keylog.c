@@ -412,6 +412,7 @@ static void		__exit keylogger_clean(void)
 	}
 	key_log_iter(&key_logprint, NULL);
 	key_log_clean();
+	pr_info("Keylogger removed.\n");
 }
 
 static int		__init hello_init(void)
