@@ -97,6 +97,18 @@ static struct key_log_index	*key_log_last(struct key_log_index *lst)
 	return lst;
 }
 
+static void	key_log_iter(void (*func)(struct key_log_entry *, void *),
+			     void *data)
+{
+	struct key_log_index		*lst;
+	size_t				i;
+
+	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
+		for (i = 0; i < lst->used; i++)
+			func(&lst->entries[i], data);
+	}
+}
+
 static void		key_log_clean(void)
 {
 	struct key_log_index	*lst;
@@ -229,18 +241,6 @@ static void	key_prepare_show_entry(struct key_log_entry *log, void *ptr)
 		   (log->upper_case) ? "yes" : "no");
 }
 
-static void	key_log_iter(void (*func)(struct key_log_entry *, void *),
-			     void *data)
-{
-	struct key_log_index		*lst;
-	size_t				i;
-
-	for (lst = key_log_last(key_full_log); lst; lst = lst->prev) {
-		for (i = 0; i < lst->used; i++)
-			func(&lst->entries[i], data);
-	}
-}
-
 static int	key_prepare_show(struct seq_file *seq, void *ptr)
 {
 	pr_info("show start\n");
@@ -355,7 +355,7 @@ static void		key_job(struct work_struct *work)
 static irqreturn_t	key_handler(int irq, void *dev_id)
 {
 	struct key_task			*task;
-	static bool			caps_lock = false;
+	static bool			caps_lock;
 
 	task = kmalloc(sizeof(*task), GFP_KERNEL);
 	if (task) {
@@ -380,7 +380,7 @@ static void	key_logprint(struct key_log_entry *log, void *ptr)
 	char		ascii;
 
 	if (log->event != PRESS)
-		return ;
+		return;
 	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 	if (ascii != 0x0)
 		pr_info(KERN_CONT "%c", ascii);
