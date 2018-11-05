@@ -74,7 +74,7 @@ static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 		return NULL;
 	blocks = (LOG_PAGE_SIZE - (sizeof(struct key_log_index))) /
 		 sizeof(struct key_log_entry);
-	pr_info("created a new page of %lu logs enties", blocks);
+	pr_info("created a new page of %lu logs entries", blocks);
 	memset(ptr, 0, LOG_PAGE_SIZE);
 	*((struct key_log_index *)ptr) = (struct key_log_index) {
 		.prev = NULL,
