@@ -69,26 +69,22 @@ DEFINE_SPINLOCK(slock);
 
 static struct key_log_index	*key_log_create_page(struct key_log_index *next)
 {
-	void		*ptr;
-	size_t		blocks;
+	struct key_log_index	*idx;
+	size_t			blocks;
 
-	ptr = kmalloc(LOG_PAGE_SIZE, GFP_KERNEL);
-	if (!ptr)
+	idx = kmalloc(LOG_PAGE_SIZE, GFP_KERNEL);
+	if (!idx)
 		return NULL;
 	blocks = (LOG_PAGE_SIZE - (sizeof(struct key_log_index))) /
 		 sizeof(struct key_log_entry);
 	pr_info("created a new page of %lu logs entries", blocks);
-	memset(ptr, 0, LOG_PAGE_SIZE);
-	*((struct key_log_index *)ptr) = (struct key_log_index) {
-		.prev = NULL,
-		.next = next,
-		.available = blocks,
-		.used = 0,
-		.entries = (void *)((size_t)ptr + sizeof(struct key_log_index))
-	};
+	memset(idx, 0, LOG_PAGE_SIZE);
+	idx->next = next;
+	idx->entries = (void *)((size_t)idx + sizeof(struct key_log_index));
+	idx->available = blocks;
 	if (next)
-		next->prev = ptr;
-	return ptr;
+		next->prev = idx;
+	return idx;
 }
 
 static struct key_log_index	*key_log_last(struct key_log_index *lst)
