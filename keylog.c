@@ -40,18 +40,37 @@ enum e_key_event {
 	RELEASE
 };
 
-// this structure describe a log entry
-// key : witch key this key refers to, it will point on key_table
-// timestamp : when this event occurred
-// event : was it a press or a release ?
+/*
+ * This structure decrbites a log entry
+ * key         : wich physical key this event is related to ?
+ * tm          : a timestamp structure formated
+ * jiffies     : the jiffie value at this log creation time.
+ * event       : each log entry relate a PRESS or RELEASE event.
+ * upper_case  : state of caps locks at this log creation
+ * press_count : numbers of key_press at this time
+ * link        : in case of a key PRESS-RELEASE pair, each will
+ *               point to the relative event, the released will
+ *               point to the press and vice versa.
+ */
 
 struct key_log_entry {
 	const struct key_map	*key;
 	struct tm		tm;
+	size_t			jiffies;
 	enum e_key_event	event;
 	bool			upper_case;
 	size_t			press_count;
+	struct key_log_entry	*link;
 };
+
+/*
+ * Eeach page of log has one one theses structure at top, this is
+ * a metadata page information.
+ * prev      : previous page
+ * next      : next page
+ * available : how many log entry are available for write ?
+ * used      : how many log entry are used ?
+ */
 
 struct key_log_index {
 	struct key_log_index	*prev;
@@ -106,6 +125,29 @@ static void	key_log_iter(void (*func)(struct key_log_entry *, void *),
 		for (i = 0; i < lst->used; i++)
 			func(&lst->entries[i], data);
 	}
+}
+
+/*
+ * look into the log for "needle", the log is walked in the reverse
+ * order, also to match the target log entry must havent be already linked
+ * you you wish to allow already linked item you have to use empty at true
+ */
+
+static struct key_log_entry	*key_log_search_key(struct key_map *needle,
+						    const bool empty)
+{
+	struct key_log_entry	*log;
+	struct key_log_index	*lst;
+	size_t			i;
+
+	for (lst = key_full_log; lst; lst = lst->next) {
+		for (i = lst->used; i > 0; i--) {
+			log = &lst->entries[i - 1];
+			if (log->key == needle && (empty || !log->link))
+				return log;
+		}
+	}
+	return NULL;
 }
 
 static void		key_log_clean(void)
@@ -233,13 +275,17 @@ static void	key_prepare_show_entry(struct key_log_entry *log, void *ptr)
 		return;
 	}
 	seq_printf(seq,
-		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu of %4lu (caps: %3s)\n",
+		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu of %4lu (caps: %3s)",
 		   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
 		   (log->upper_case) ? log->key->upper_name : log->key->name,
 		   log->key->scancode,
 		   (log->event == PRESS) ? "pressed" : "released",
 		   log->press_count, log->key->press_count,
 		   (log->upper_case) ? "yes" : "no");
+	if (log->event == RELEASE && log->link)
+		seq_printf(seq, " durration: %4lu",
+			   log->jiffies - log->link->jiffies);
+	seq_putc(seq, '\n');
 }
 
 static int	key_prepare_show(struct seq_file *seq, void *ptr)
@@ -297,7 +343,11 @@ static struct key_log_entry *key_create_entry(struct key_map *key,
 	}
 	getnstimeofday(&ts);
 	log = &key_full_log->entries[key_full_log->used];
+	log->jiffies = jiffies;
 	log->key = key;
+	log->link = (key->pressed) ? NULL : key_log_search_key(key, false);
+	if (log->link)
+		log->link->link = log;
 	log->press_count = key->press_count;
 	log->event = (key->pressed) ? PRESS : RELEASE;
 	log->upper_case = key_shift_left->pressed | key_shift_right->pressed;
@@ -412,7 +462,7 @@ static int		__init hello_init(void)
 	if (ret < 0) {
 		pr_err("failed to register device.\n");
 		free_irq(KEYBOARD_IRQ, &key_handler);
-		return 1;
+		return ret;
 	}
 	return 0;
 }
