@@ -246,7 +246,7 @@ static const struct file_operations ops_bonus = {
 
 static struct miscdevice		dev_bonus = {
 	MISC_DYNAMIC_MINOR,
-	MODULE_NAME,
+	KEY_BONUS_DEVICE,
 	&ops_bonus
 };
 
