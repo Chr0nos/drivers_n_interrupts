@@ -299,6 +299,7 @@ static int		stats_open(struct inode *node, struct file *file)
 	int		ret;
 
 	spin_lock(&slock);
+	file->private_data = NULL;
 	ret = single_open(file, key_stats_show, NULL);
 	spin_unlock(&slock);
 	return ret;
