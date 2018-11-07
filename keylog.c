@@ -230,28 +230,27 @@ static void		bonus_iterate(struct key_log_entry *log, void *ptr)
 
 static int		bonus_show(struct seq_file *seq, void *ptr)
 {
-	struct bonus_pack	pack;
+	struct bonus_pack	*pack = ptr;
 
-	pack.seq = seq;
-	pack.file = ptr;
-	pr_info("show: %p - %p\n", &pack, pack.file->private_data);
-	key_log_iter(bonus_iterate, &pack);
-	kfree(pack.file->private_data);
-	pack.file->private_data = NULL;
+	pack->seq = seq;
+	pack->file = ptr;
+	pr_info("show: %p\n", &pack);
+	key_log_iter(bonus_iterate, pack);
+	kfree(pack);
 	return 0;
 }
 
 static int		bonus_open(struct inode *node, struct file *file)
 {
 	int			ret;
+	struct bonus_pack	*pack;
 
-	file->private_data = kmalloc(sizeof(struct bonus_pack), GFP_KERNEL);
-	if (!file->private_data)
+	pack = kmalloc(sizeof(struct bonus_pack), GFP_KERNEL);
+	if (!pack)
 		return -ENOMEM;
-	((struct bonus_pack*)file->private_data)->file = file;
 	spin_lock(&slock);
-	pr_info("open: %p - %p\n", file, file->private_data);
-	ret = single_open(file, bonus_show, file->private_data);
+	pr_info("open: %p - %p\n", file, pack);
+	ret = single_open(file, bonus_show, pack);
 	spin_unlock(&slock);
 	return ret;
 }
