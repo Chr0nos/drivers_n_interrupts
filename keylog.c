@@ -350,17 +350,17 @@ static int		__init hello_init(void)
 			  &key_handler);
 	if (ret < 0) {
 		pr_err("failed to request keyboard irq: %d\n", ret);
-		return (keylogger_cleaner(KFLAG_NONE, -ENOMEM));
+		return keylogger_cleaner(KFLAG_NONE, -ENOMEM);
 	}
 	ret = misc_register(&dev);
 	if (ret < 0) {
 		pr_err("failed to register device.\n");
-		return (keylogger_cleaner(KFLAG_IRQ, ret));
+		return keylogger_cleaner(KFLAG_IRQ, ret);
 	}
 	ret = misc_register(&dev_bonus);
 	if (ret < 0) {
 		pr_err("failed to register bonus device\n");
-		return (keylogger_cleaner(KFLAG_IRQ | KFLAG_DEV, ret));
+		return keylogger_cleaner(KFLAG_IRQ | KFLAG_DEV, ret);
 	}
 	return 0;
 }
