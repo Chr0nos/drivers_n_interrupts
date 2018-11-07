@@ -379,8 +379,10 @@ static int		cleanner(const size_t flags, const int retval)
 		pr_info("unregistering bonus device.\n");
 		misc_deregister(&dev_bonus);
 	}
-	if (flags & KFLAG_DEVSTATS)
+	if (flags & KFLAG_DEVSTATS) {
+		pr_info("unregistering stats device\n");
 		misc_deregister(&dev_stats);
+	}
 	if (flags & KFLAG_IRQ) {
 		pr_info("releasing irq.\n");
 		free_irq(KEYBOARD_IRQ, &key_handler);
