@@ -285,7 +285,8 @@ static int		key_stats_show(struct seq_file *seq, void *ptr)
 			if (!key->name)
 				break;
 			pct = (float)key->press_count / total_press;
-			seq_printf(seq, "%s %3ld", key->name, key->press_count);
+			seq_printf(seq, "%14s %3ld",
+				   key->name, key->press_count);
 		}
 		seq_putc(seq, '\n');
 	}
