@@ -305,19 +305,19 @@ static void	key_logprint_smart(struct key_log_entry *log, void *ptr)
 static int		keylogger_cleaner(const size_t flags, const int retval)
 {
 	if (flags & KFLAG_DEV) {
-		pr_info("unregistering device.");
+		pr_info("unregistering device.\n");
 		misc_deregister(&dev);
 	}
 	if (flags & KFLAG_DEVBONUS) {
-		pr_info("unregistering bonus device.");
+		pr_info("unregistering bonus device.\n");
 		misc_deregister(&dev_bonus);
 	}
 	if (flags & KFLAG_IRQ) {
-		pr_info("releasing irq.");
+		pr_info("releasing irq.\n");
 		free_irq(KEYBOARD_IRQ, &key_handler);
 	}
 	if (workqueue) {
-		pr_info("deleting workqueue");
+		pr_info("deleting workqueue\n");
 		flush_workqueue(workqueue);
 		destroy_workqueue(workqueue);
 	}
