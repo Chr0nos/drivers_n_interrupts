@@ -217,8 +217,10 @@ static void		bonus_iterate(struct key_log_entry *log, void *ptr)
 
 	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 	if (ascii == '\b') {
-		if (seq->count > 0)
+		if (seq->count > 0) {
 			seq->count -= 1;
+			seq->index -= 1;
+		}
 	} else if (isprint(ascii) || ascii == '\n')
 		seq_putc(seq, ascii);
 }
