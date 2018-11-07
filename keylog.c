@@ -279,7 +279,7 @@ static int		key_stats_show(struct seq_file *seq, void *ptr)
 	size_t			j;
 
 	key = &key_table[0];
-	seq_printf(seq, "total key pressed: %lu\n", total_press);
+	seq_printf(seq, "total key pressed: %lu\n\n", total_press);
 	while (key->name) {
 		for (j = 0; j < 4; j++) {
 			key++;
