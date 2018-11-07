@@ -359,7 +359,7 @@ static int		__init hello_init(void)
 	}
 	ret = misc_register(&dev_bonus);
 	if (ret < 0) {
-		pr_err("failed to register bonus device\n.");
+		pr_err("failed to register bonus device\n");
 		return (keylogger_cleaner(KFLAG_IRQ | KFLAG_DEV, ret));
 	}
 	return 0;
