@@ -1,4 +1,4 @@
-obj-m += keylog.o
+obj-m += stats.o keylog.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules

