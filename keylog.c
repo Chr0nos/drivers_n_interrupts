@@ -230,32 +230,28 @@ static void		bonus_iterate(struct key_log_entry *log, void *ptr)
 
 static int		bonus_show(struct seq_file *seq, void *ptr)
 {
-	struct bonus_pack	*pack = ptr;
+	struct bonus_pack	pack;
 
-	pr_info("show: %p\n", pack);
-	if (ptr) {
-		pack->seq = seq;
-		key_log_iter(bonus_iterate, pack);
-	} else
-		pr_err("NULL pointer detected in bonus.\n");
-	kfree(pack);
+	pack.seq = seq;
+	pack.file = ptr;
+	pr_info("show: %p - %p\n", &pack, pack.file->private_data);
+	key_log_iter(bonus_iterate, &pack);
+	kfree(pack.file->private_data);
+	pack.file->private_data = NULL;
 	return 0;
 }
 
 static int		bonus_open(struct inode *node, struct file *file)
 {
 	int			ret;
-	struct bonus_pack	*pack;
 
-	pack = kmalloc(sizeof(*pack), GFP_KERNEL);
-	if (!pack)
+	file->private_data = kmalloc(sizeof(struct bonus_pack), GFP_KERNEL);
+	if (!file->private_data)
 		return -ENOMEM;
-	pack->seq = NULL;
-	pack->file = file;
-	file->private_data = NULL;
+	((struct bonus_pack*)file->private_data)->file = file;
 	spin_lock(&slock);
-	pr_info("open: %p\n", pack);
-	ret = single_open(file, bonus_show, pack);
+	pr_info("open: %p - %p\n", file, file->private_data);
+	ret = single_open(file, bonus_show, file->private_data);
 	spin_unlock(&slock);
 	return ret;
 }
