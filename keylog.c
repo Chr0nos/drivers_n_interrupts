@@ -19,6 +19,8 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sebastien Nicolet <snicolet@student.42.fr>");
 MODULE_DESCRIPTION("keyboard keylogger");
 
+DEFINE_SPINLOCK(slock);
+
 static struct key_map		*key_shift_left;
 static struct key_map		*key_shift_right;
 static struct key_log_index	*key_full_log;
@@ -256,6 +258,64 @@ static struct miscdevice		dev_bonus = {
 	&ops_bonus
 };
 
+/* ------------------------ KEY STATS DEVICE -------------------------------- */
+
+static size_t		key_total_presss(void)
+{
+	size_t		i;
+	size_t		count;
+
+	count = 0;
+	for (i = 0; key_table[i].name; i++)
+		count += key_table[i].press_count;
+	return count;
+}
+
+static int		key_stats_show(struct seq_file *seq, void *ptr)
+{
+	const struct key_map	*key;
+	const size_t		total_press = key_total_presss();
+	float			pct;
+	size_t			j;
+
+	key = &key_table[0];
+	while (key->name) {
+		for (j = 0; j < 4; j++) {
+			key++;
+			if (!key->name)
+				break;
+			pct = (float)key->press_count / total_press;
+			seq_printf(seq, "%s %3ld", key->name, key->press_count);
+		}
+		seq_putc(seq, '\n');
+	}
+	return 0;
+}
+
+static int		stats_open(struct inode *node, struct file *file)
+{
+	int		ret;
+
+	spin_lock(&slock);
+	ret = single_open(file, key_stats_show, NULL);
+	spin_unlock(&slock);
+	return ret;
+}
+
+static const struct file_operations ops_stats = {
+	.owner = THIS_MODULE,
+	.open = stats_open,
+	.read = seq_read,
+	.release = single_release,
+	.llseek = seq_lseek
+};
+
+static struct miscdevice		dev_stats = {
+	MISC_DYNAMIC_MINOR,
+	"keylog_stats",
+	&ops_stats
+};
+
 /* ----------------------- IRQ HANDLER SECTION -------------------------------*/
 
 static void		key_job(struct work_struct *work)
@@ -319,7 +379,7 @@ static int		cleanner(const size_t flags, const int retval)
 		misc_deregister(&dev_bonus);
 	}
 	if (flags & KFLAG_DEVSTATS)
-		stats_exit();
+		misc_deregister(&dev_stats);
 	if (flags & KFLAG_IRQ) {
 		pr_info("releasing irq.\n");
 		free_irq(KEYBOARD_IRQ, &key_handler);
@@ -370,7 +430,7 @@ static int		__init hello_init(void)
 		pr_err("failed to register bonus device\n");
 		return cleanner(KFLAG_IRQ | KFLAG_DEV, ret);
 	}
-	ret = stats_init();
+	ret = misc_register(&dev_stats);
 	if (ret < 0) {
 		pr_err("failed to register stats device.\n");
 		return cleanner(KFLAG_IRQ | KFLAG_DEV | KFLAG_DEVBONUS, ret);

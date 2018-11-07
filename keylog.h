@@ -2,8 +2,6 @@
 #ifndef KEYLOG_H
 #define KEYLOG_H
 
-DEFINE_SPINLOCK(slock);
-
 #define	MODULE_NAME		"keylogger"
 #define KEY_BONUS_DEVICE	"keylog_line"
 #define KEYBOARD_IRQ		1
@@ -155,8 +153,5 @@ static struct key_map key_table[] = {
 	(struct key_map){0, 0, 93, "Menu", "Menu", false, 0},
 	(struct key_map){0, 0, 0, NULL, NULL, false, 0}
 };
-
-int		stats_init(void);
-void		stats_exit(void);
 
 #endif
