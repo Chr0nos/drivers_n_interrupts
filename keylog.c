@@ -225,7 +225,7 @@ static void		bonus_iterate(struct key_log_entry *log, void *ptr)
 
 static int		bonus_show(struct seq_file *seq, void *ptr)
 {
-	key_log_iter(bonus_iterate, ptr);
+	key_log_iter(bonus_iterate, seq);
 	return 0;
 }
 
