@@ -254,8 +254,8 @@ static struct miscdevice		dev_bonus = {
 
 static void		key_job(struct work_struct *work)
 {
-	struct key_task		*task = (struct key_task *)work;
 	unsigned int		scancode = task->scancode;
+	struct key_task		*task = (struct key_task *)work;
 	struct key_map		*key;
 
 	spin_lock(&slock);
