@@ -215,6 +215,8 @@ static void		bonus_iterate(struct key_log_entry *log, void *ptr)
 	struct seq_file		*seq = ptr;
 	char			ascii;
 
+	if (log->event != PRESS)
+		return;
 	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 	if (ascii == '\b') {
 		if (seq->count > 0) {
