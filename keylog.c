@@ -231,8 +231,11 @@ static int		bonus_show(struct seq_file *seq, void *ptr)
 {
 	struct bonus_pack	*pack = ptr;
 
-	pack->seq = seq;
-	key_log_iter(bonus_iterate, pack);
+	if (ptr) {
+		pack->seq = seq;
+		key_log_iter(bonus_iterate, pack);
+	} else
+		pr_err("NULL pointer detected in bonus.\n");
 	return 0;
 }
 
