@@ -236,19 +236,23 @@ static int		bonus_show(struct seq_file *seq, void *ptr)
 		key_log_iter(bonus_iterate, pack);
 	} else
 		pr_err("NULL pointer detected in bonus.\n");
+	kfree(pack);
 	return 0;
 }
 
 static int		bonus_open(struct inode *node, struct file *file)
 {
 	int			ret;
-	struct bonus_pack	pack;
+	struct bonus_pack	*pack;
 
-	pack.seq = NULL;
-	pack.file = file;
+	pack = kmalloc(sizeof(*pack), GFP_KERNEL);
+	if (!pack)
+		return -ENOMEM;
+	pack->seq = NULL;
+	pack->file = file;
 	file->private_data = NULL;
 	spin_lock(&slock);
-	ret = single_open(file, bonus_show, &pack);
+	ret = single_open(file, bonus_show, pack);
 	spin_unlock(&slock);
 	return ret;
 }
