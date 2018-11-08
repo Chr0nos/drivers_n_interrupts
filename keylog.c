@@ -273,7 +273,6 @@ static int		key_stats_show(struct seq_file *seq, void *ptr)
 {
 	const struct key_map	*key;
 	const size_t		total_press = key_total_presss();
-	float			pct;
 	size_t			j;
 
 	key = &key_table[0];
@@ -283,7 +282,6 @@ static int		key_stats_show(struct seq_file *seq, void *ptr)
 			key++;
 			if (!key->name)
 				break;
-			pct = (float)key->press_count / total_press;
 			seq_printf(seq, "%14s %-8ld",
 				   key->name, key->press_count);
 		}
