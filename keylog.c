@@ -279,11 +279,11 @@ static int		key_stats_show(struct seq_file *seq, void *ptr)
 	seq_printf(seq, "total key pressed: %lu\n\n", total_press);
 	while (key->name) {
 		for (j = 0; j < 4; j++) {
-			key++;
 			if (!key->name)
 				break;
 			seq_printf(seq, "%14s %-8ld",
 				   key->name, key->press_count);
+			key++;
 		}
 		seq_putc(seq, '\n');
 	}
