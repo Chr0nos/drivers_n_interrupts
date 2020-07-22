@@ -128,7 +128,7 @@ static struct key_map	*get_key(const unsigned int scancode)
 static struct key_log_entry *key_create_entry(struct key_map *key,
 					      const bool caps)
 {
-	struct timespec		ts;
+	struct timespec64		ts;
 	struct key_log_entry	*log;
 	struct key_log_index	*page;
 
@@ -141,7 +141,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key,
 		}
 		key_full_log = page;
 	}
-	getnstimeofday(&ts);
+	ktime_get_ts64(&ts);
 	log = &key_full_log->entries[key_full_log->used];
 	log->jiffies = jiffies;
 	log->key = key;
@@ -154,7 +154,7 @@ static struct key_log_entry *key_create_entry(struct key_map *key,
 	// in case of caps lock we invert the comportement.
 	if (caps && key_ignore_caps(key) == false)
 		log->upper_case = !log->upper_case;
-	time_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->tm);
+	time64_to_tm(ts.tv_sec, sys_tz.tz_minuteswest, &log->tm);
 	key_full_log->used += 1;
 	key_full_log->available -= 1;
 	return log;
